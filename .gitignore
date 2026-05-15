@@ -1,0 +1,29 @@
+# Data (too large for git)
+data/raw/
+data/processed/
+*.json.gz
+*.parquet
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+
+# Models (download separately)
+models/
+*.bin
+*.safetensors
+*.gguf
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
