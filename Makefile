@@ -109,7 +109,7 @@ docker-logs:
 	cd backend && docker compose --profile cpu-local logs -f
 
 docker-shell:
-	cd backend && docker exec -it jollof-api bash
+	cd backend && docker exec -it backend-api bash
 
 docker-clean:
 # Wipe, stop and remove all containers (incl. Ollama) and files
@@ -154,7 +154,7 @@ eval-all:
 	@echo ".............."
 	@echo "Running evaluation suite..."
 	@echo "Running evaluation suite (Task A)..."
-	eval-a
+	$(MAKE) eval-a
 	@echo "Running evaluation suite (Task B)..."
-	eval-b
+	$(MAKE) eval-b
 	@echo "✓ Evaluation complete – reports in eval/reports/"
