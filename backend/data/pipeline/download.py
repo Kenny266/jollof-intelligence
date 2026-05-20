@@ -31,12 +31,15 @@ TMP_REVIEWS_FILE = RAW_DIR / "reviews.tmp.jsonl"
 REVIEWS_DATASET = "cogsci13/Amazon-Reviews-2023-Books-Review"
 META_DATASET = "cogsci13/Amazon-Reviews-2023-Books-Meta"
 
-rows_limit = 5000000
-def download_reviews(max_users: int = 10_000, min_reviews: int = 5) -> None:
+rows_limit = 50000
+max_users = 10000
+min_reviews = 5
+
+def download_reviews(max_users: int = max_users, min_reviews: int = min_reviews) -> set[str]:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
     # --- HTTP pass (single connection, 15% slice) → temp file ---
-    logger.info(f"Streaming ${rows_limit} rows of reviews from HuggingFace to temp file…")
+    logger.info(f"Streaming {rows_limit} rows of reviews from HuggingFace to temp file…")
     ds = load_dataset(
         REVIEWS_DATASET,
         "default",
@@ -44,7 +47,9 @@ def download_reviews(max_users: int = 10_000, min_reviews: int = 5) -> None:
         trust_remote_code=True,
         streaming=True,
     )
-    ds = ds.take(rows_limit)
+    if rows_limit is not None:
+        ds = ds.take(rows_limit)
+
     tmp_count = 0
 
     with TMP_REVIEWS_FILE.open("w", encoding="utf-8") as f:
@@ -93,15 +98,39 @@ def download_reviews(max_users: int = 10_000, min_reviews: int = 5) -> None:
     TMP_REVIEWS_FILE.unlink()
     logger.info("Wrote %d reviews to %s", written, REVIEWS_FILE)
 
+    # Collect all parent_asins present in the final filtered reviews file
+    reviewed_asins: set[str] = set()
+    with REVIEWS_FILE.open("r", encoding="utf-8") as f:
+        for line in f:
+            asin = json.loads(line).get("parent_asin")
+            if asin:
+                reviewed_asins.add(asin)
+    logger.info("Collected %d unique parent_asin values from reviews", len(reviewed_asins))
+    return reviewed_asins
 
-def download_metadata() -> None:
-    logger.info(f"Loading item metadata from HuggingFace (${rows_limit} rows)…")
+
+def download_metadata(required_asins: set[str] | None = None) -> None:
+    """Stream metadata, keeping only records whose parent_asin appears in reviews."""
+    label = f"{rows_limit} rows" if required_asins is None else f"{len(required_asins)} target ASINs"
+    logger.info(f"Loading item metadata from HuggingFace ({label})…")
     ds = load_dataset(META_DATASET, "default", split="full", trust_remote_code=True, streaming=True)
-    ds = ds.take(rows_limit)
+
+    if rows_limit is not None:
+        ds = ds.take(rows_limit)
+
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     written = 0
+
+    # When we know which ASINs we need, scan until all are found (or exhausted).
+    # Without a filter set, fall back to the plain row-limit behaviour.
+    remaining = set(required_asins) if required_asins else None
+
     with META_FILE.open("w", encoding="utf-8") as f:
         for row in tqdm(ds, desc="writing metadata"):
+            if remaining is not None and row.get("parent_asin") not in remaining:
+                continue
+            if remaining is None and written >= rows_limit:
+                break
             author_raw = row.get("author", "")
             author_name = ""
             if isinstance(author_raw, dict):
@@ -130,6 +159,12 @@ def download_metadata() -> None:
             }
             f.write(json.dumps(record) + "\n")
             written += 1
+            if remaining is not None:
+                remaining.discard(row.get("parent_asin"))
+                if not remaining:
+                    logger.info("All target ASINs found — stopping metadata stream early.")
+                    break
+
     logger.info("Wrote %d metadata records to %s", written, META_FILE)
 
 
@@ -138,5 +173,5 @@ if __name__ == "__main__":
     parser.add_argument("--max-users", type=int, default=10_000)
     parser.add_argument("--min-reviews", type=int, default=5)
     args = parser.parse_args()
-    download_reviews(max_users=args.max_users, min_reviews=args.min_reviews)
-    download_metadata()
+    reviewed_asins = download_reviews(max_users=args.max_users, min_reviews=args.min_reviews)
+    download_metadata(required_asins=reviewed_asins)

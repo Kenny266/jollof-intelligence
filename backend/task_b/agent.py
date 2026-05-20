@@ -141,7 +141,7 @@ class RecommendationAgent:
             user_request=user_request,
         )
         try:
-            llm_query = await generate(query_prompt, max_tokens=100, temperature=0.3, think=True)
+            llm_query = await generate(query_prompt, max_tokens=100, temperature=0.3, think=False)
             llm_query = llm_query.strip().strip('"')
         except Exception as exc:
             logger.warning("Query generation failed: %s — using raw request", exc)
