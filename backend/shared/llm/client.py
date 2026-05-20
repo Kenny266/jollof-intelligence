@@ -3,6 +3,7 @@ Async Ollama HTTP client.
 Both Task A and Task B agents import `generate()` from here so the
 connection is reused across requests.
 """
+import asyncio
 import json
 import logging
 import re
@@ -45,10 +46,8 @@ async def generate(
         "top_p": settings.llm_top_p,
         "num_predict": max_tokens if max_tokens is not None else settings.llm_max_tokens,
     }
-    if think is not None:
-        options["think"] = think
 
-    payload = {
+    payload: dict[str, object] = {
         "model": settings.agent_model,
         "prompt": prompt,
         "stream": False,
@@ -56,23 +55,41 @@ async def generate(
     }
     if system:
         payload["system"] = system
+    # Qwen3 thinking mode: top-level field, NOT inside options.
+    # Passing it inside options causes Ollama to log "invalid option provided option=think".
+    if think is not None:
+        payload["think"] = think
 
     url = f"{settings.ollama_base_url}/api/generate"
-    try:
-        async with httpx.AsyncClient(timeout=180.0) as client:
-            resp = await client.post(url, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-            return data.get("response", "").strip()
-    except httpx.HTTPStatusError as exc:
-        logger.error(
-            "Ollama returned HTTP error",
-            extra={"status_code": exc.response.status_code, "url": url},
-        )
-        raise RuntimeError(f"Ollama HTTP error {exc.response.status_code}") from exc
-    except httpx.RequestError as exc:
-        logger.error("Ollama request failed", extra={"url": url, "error": str(exc)})
-        raise RuntimeError(f"Cannot reach Ollama at {url}") from exc
+    last_exc: Exception | None = None
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=180.0) as client:
+                resp = await client.post(url, json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+                text = data.get("response", "").strip()
+                # Strip chain-of-thought blocks emitted by Qwen3/DeepSeek when think=True
+                text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+                return text
+        except httpx.HTTPStatusError as exc:
+            logger.error(
+                "Ollama returned HTTP error",
+                extra={"status_code": exc.response.status_code, "url": url, "attempt": attempt + 1},
+            )
+            raise RuntimeError(f"Ollama HTTP error {exc.response.status_code}") from exc
+        except httpx.RequestError as exc:
+            last_exc = exc
+            if attempt < 2:
+                wait = 2 ** attempt
+                logger.warning(
+                    "Ollama unreachable (attempt %d/3), retrying in %ds: %s",
+                    attempt + 1, wait, exc,
+                )
+                await asyncio.sleep(wait)
+            else:
+                logger.error("Ollama request failed after 3 attempts", extra={"url": url, "error": str(exc)})
+    raise RuntimeError(f"Cannot reach Ollama at {url}") from last_exc
 
 
 async def generate_judge(
