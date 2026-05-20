@@ -1,0 +1,64 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Packaging / build
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Data (large / generated files – keep pipeline scripts, not the data itself)
+data/raw/
+data/processed/
+data/chroma_db/
+
+# Model weights
+ollama_models/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Evaluation reports (generated artefacts)
+eval/reports/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb~
+
+# Type checker / linter caches
+.ruff_cache/
+.mypy_cache/
+.pyright/
+pyrightconfig.json
+
+# Test / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

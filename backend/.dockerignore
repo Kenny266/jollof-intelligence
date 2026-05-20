@@ -1,0 +1,71 @@
+# ── Environment & secrets ──────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Python bytecode & caches ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Data (large files – mounted as volumes at runtime) ────────────────────────
+data/raw/
+data/processed/
+data/chroma_db/
+
+# ── Model weights (pulled by Ollama at runtime) ───────────────────────────────
+ollama_models/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# ── Evaluation reports (generated artefacts) ─────────────────────────────────
+eval/reports/
+
+# ── Jupyter notebooks (not needed inside the container) ──────────────────────
+notebooks/
+.ipynb_checkpoints/
+
+# ── Paper / docs ──────────────────────────────────────────────────────────────
+paper/
+
+# ── Git & CI ──────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.github/
+
+# ── Docker files themselves (no recursive build contexts) ────────────────────
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# ── IDE & OS ─────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Packaging artefacts ───────────────────────────────────────────────────────
+*.egg-info/
+dist/
+build/
+*.whl
+
+# ── Makefile (not needed inside the container) ───────────────────────────────
+Makefile
+README.md

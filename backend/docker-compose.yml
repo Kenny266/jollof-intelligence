@@ -1,0 +1,75 @@
+services:
+  ollama-qwen:
+    image: ollama/ollama:latest
+    container_name: ollama-qwen
+    profiles: [cpu-local]
+    ports:
+      - "8001:11434"
+    volumes:
+      # Bind mount: persists pulled model weights between container restarts
+      - ./ollama_models/deepseek:/root/.ollama
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull ${AGENT_MODEL} && wait"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list | grep -q ${AGENT_MODEL}"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  ollama-judge:
+    image: ollama/ollama:latest
+    container_name: ollama-judge
+    profiles: [cpu-local]
+    ports:
+      - "8002:11434"
+    volumes:
+      - ./ollama_models/judge:/root/.ollama
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull ${JUDGE_MODEL} && wait"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list | grep -q ${JUDGE_MODEL}"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  ollama-embed:
+    image: ollama/ollama:latest
+    container_name: ollama-embed
+    profiles: [cpu-local]
+    ports:
+      - "8003:11434"
+    volumes:
+      - ./ollama_models/embed:/root/.ollama
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull ${EMBEDDING_MODEL} && wait"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list | grep -q ${EMBEDDING_MODEL}"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jollof-api
+    profiles: [cpu-local]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    depends_on:
+      ollama-qwen:
+        condition: service_healthy
+      ollama-judge:
+        condition: service_healthy
+      ollama-embed:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
