@@ -4,8 +4,8 @@
 Data & AI Summit | Deadline: 24 May 2026
 
 Two LLM-powered agents that model human behaviour and deliver personalised book
-recommendations — with authentic Nigerian English outputs, powered entirely by a
-local DeepSeek-R1 model via Ollama.
+recommendations — with authentic Nigerian English outputs, powered entirely by
+local Qwen3 and DeepSeek-R1 models via Ollama.
 
 ---
 
@@ -28,33 +28,33 @@ local DeepSeek-R1 model via Ollama.
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    FastAPI (port 8000)                      │
-│  POST /api/v1/task-a/generate-review                        │
-│  POST /api/v1/task-b/recommend                              │
-└──────────────┬──────────────────────────┬───────────────────┘
-               │                          │
-    ┌──────────▼──────────┐   ┌───────────▼───────────────┐
-    │  Task A Agent       │   │  Task B Agent              │
-    │  User Modeling      │   │  Recommendation            │
-    │  - Persona Builder  │   │  - Warm/Cold-start routing │
-    │  - RAG Retrieval    │   │  - Cross-domain expansion  │
-    │  - Rating Predictor │   │  - Multi-turn dialogue     │
-    │  - Review Generator │   │  - LLM Reranker            │
-    └──────────┬──────────┘   └───────────┬────────────────┘
-               │                          │
-    ┌──────────▼──────────────────────────▼───────────────────┐
-    │  Shared Services                                        │
-    │  - ChromaDB  (persistent, data/chroma_db/)              │
-    │  - Nigerian Context System Prompt                        │
-    └──────────┬──────────────────────────┬───────────────────┘
-               │                          │
-    ┌──────────▼──────────┐   ┌──────────▼──────────┐   ┌──────────▼──────────┐
-    │  ollama-deepseek    │   │  ollama-judge       │   │  ollama-embed       │
-    │  deepseek-r1:1.5b   │   │  deepseek-r1:7b     │   │  nomic-embed-text   │
-    │  port 8001          │   │  port 8002          │   │  port 8003          │
-    │  (agent inference)  │   │  (eval / judge)     │   │  (vector embed)     │
-    └─────────────────────┘   └─────────────────────┘   └─────────────────────┘
+    ┌─────────────────────────────────────────────────────────────┐
+    │                    FastAPI (port 8000)                      │
+    │  POST /api/v1/task-a/generate-review                        │
+    │  POST /api/v1/task-b/recommend                              │
+    └──────────────┬──────────────────────────┬───────────────────┘
+                   │                          │
+        ┌──────────▼──────────┐   ┌───────────▼───────────────┐
+        │  Task A Agent       │   │  Task B Agent              │
+        │  User Modeling      │   │  Recommendation            │
+        │  - Persona Builder  │   │  - Warm/Cold-start routing │
+        │  - RAG Retrieval    │   │  - Cross-domain expansion  │
+        │  - Rating Predictor │   │  - Multi-turn dialogue     │
+        │  - Review Generator │   │  - LLM Reranker            │
+        └──────────┬──────────┘   └───────────┬────────────────┘
+                   │                          │
+        ┌──────────▼──────────────────────────▼───────────────────┐
+        │  Shared Services                                        │
+        │  - ChromaDB  (persistent, data/chroma_db/)              │
+        │  - Nigerian Context System Prompt                        │
+        └──────────┬──────────────────────────┬───────────────────┘
+                   │                          │
+        ┌──────────▼──────────┐   ┌──────────▼──────────┐   ┌──────────▼──────────┐
+        │  ollama-qwen        │   │  ollama-judge       │   │  ollama-embed       │
+        │  qwen3:1.7b         │   │  deepseek-r1:1.5b   │   │  nomic-embed-text   │
+        │  port 8001          │   │  port 8002          │   │  port 8003          │
+        │  (agent inference)  │   │  (eval / judge)     │   │  (vector embed)     │
+        └─────────────────────┘   └─────────────────────┘   └─────────────────────┘
 ```
 
 Embeddings are served by Ollama over HTTP (`POST /api/embeddings`) — the API
@@ -117,7 +117,8 @@ backend/
 ├── paper/                              # Solution paper PDF
 ├── Dockerfile
 ├── docker-compose.yml
-├── requirements.txt
+├── requirements.txt            # Production API dependencies (no torch)
+├── requirements-eval.txt       # Eval-only extras (bert-score, deepeval, datasets…)
 └── .env.example
 ```
 
@@ -151,8 +152,8 @@ On first run, each Ollama container pulls its model automatically:
 
 | Service | Model | Approx. size | Cached at |
 |---|---|---|---|
-| `ollama-deepseek` | `deepseek-r1:1.5b` | ~1 GB | `./ollama_models/deepseek/` |
-| `ollama-judge` | `deepseek-r1:7b` | ~5 GB | `./ollama_models/judge/` |
+| `ollama-qwen` | `qwen3:1.7b` | ~1.1 GB | `./ollama_models/deepseek/` |
+| `ollama-judge` | `deepseek-r1:1.5b` | ~1 GB | `./ollama_models/judge/` |
 | `ollama-embed` | `nomic-embed-text` | ~274 MB | `./ollama_models/embed/` |
 
 The API container waits until all three Ollama services are healthy before starting.
@@ -218,9 +219,9 @@ docker compose --profile cpu-local up --build app
 | Container | Host port | Purpose |
 |---|---|---|
 | `jollof-api` | 8000 | FastAPI application |
-| `ollama-deepseek-r1` | 8001 | Agent inference (Task A & B) |
-| `ollama-judge-7b` | 8002 | Evaluation / LLM-as-judge |
-| `ollama-embed` | 8003 | Text embeddings for ChromaDB |
+| `ollama-qwen` | 8001 | Agent inference — `qwen3:1.7b` (Task A & B) |
+| `ollama-judge` | 8002 | Evaluation / LLM-as-judge — `deepseek-r1:1.5b` |
+| `ollama-embed` | 8003 | Text embeddings — `nomic-embed-text` |
 
 ---
 
@@ -235,9 +236,12 @@ source .venv/bin/activate        # Linux/Mac
 # 2. Install dependencies
 pip install -r requirements.txt
 
+# For running the evaluation suite (adds bert-score, deepeval, datasets, etc.):
+pip install -r requirements-eval.txt
+
 # 3. Start Ollama and pull required models
-ollama pull deepseek-r1:1.5b
-ollama pull deepseek-r1:7b       # for eval / judge metrics
+ollama pull qwen3:1.7b           # agent inference (Task A & B)
+ollama pull deepseek-r1:1.5b     # for eval / judge metrics
 ollama pull nomic-embed-text     # for ChromaDB embeddings
 ollama serve                     # runs on localhost:11434
 
@@ -247,6 +251,8 @@ cp .env.example .env
 #   OLLAMA_BASE_URL=http://localhost:11434
 #   OLLAMA_JUDGE_URL=http://localhost:11434
 #   OLLAMA_EMBED_URL=http://localhost:11434
+#   AGENT_MODEL=qwen3:1.7b
+#   JUDGE_MODEL=deepseek-r1:1.5b
 #   EMBEDDING_MODEL=nomic-embed-text
 
 # 5. Run the API
@@ -265,7 +271,7 @@ Run these steps once before making API calls. Each step saves output files that
 the next step reads from.
 
 ```bash
-# Step 1: Download Amazon Books datasets from HuggingFace
+# Step 1: Download Amazon Books datasets from HuggingFace (~15% sample)
 python -m data.pipeline.download --max-users 10000 --min-reviews 5
 # Output: data/raw/reviews.jsonl, data/raw/metadata.jsonl
 
@@ -313,7 +319,7 @@ GET /health
 ```
 
 ```json
-{"status": "ok", "model": "deepseek-r1:1.5b", "tasks": ["task-a", "task-b"]}
+{"status": "ok", "model": "qwen3:1.7b", "tasks": ["task-a", "task-b"]}
 ```
 
 ---
@@ -502,16 +508,17 @@ Copy `.env.example` to `.env` and edit as needed.
 
 | Variable | Default | Description |
 |---|---|---|
-| `OLLAMA_BASE_URL` | `http://ollama-deepseek:11434` | Ollama URL for agent inference (Task A & B) |
-| `AGENT_MODEL` | `deepseek-r1:1.5b` | Agent LLM model name |
+| `OLLAMA_BASE_URL` | `http://ollama-qwen:11434` | Ollama URL for agent inference (Task A & B) |
+| `AGENT_MODEL` | `qwen3:1.7b` | Agent LLM — generator (Task A: no-think, Task B: think) |
 | `OLLAMA_JUDGE_URL` | `http://ollama-judge:11434` | Ollama URL for evaluation / LLM-as-judge |
-| `JUDGE_MODEL` | `deepseek-r1:7b` | Judge LLM model name (DeepEval, behavioural fidelity) |
+| `JUDGE_MODEL` | `deepseek-r1:1.5b` | Judge LLM model name (DeepEval, behavioural fidelity) |
 | `OLLAMA_EMBED_URL` | `http://ollama-embed:11434` | Ollama URL for text embeddings |
 | `EMBEDDING_MODEL` | `nomic-embed-text` | Ollama embedding model (768-d vectors) |
 | `CHROMA_DB_PATH` | `data/chroma_db` | ChromaDB persistence directory |
 | `CHROMA_COLLECTION` | `reviews` | ChromaDB collection name |
 | `RETRIEVAL_TOP_K` | `10` | Default number of retrieved documents |
 | `LLM_TEMPERATURE` | `0.7` | Generation temperature |
+| `LLM_TOP_P` | `0.8` | Top-p nucleus sampling |
 | `LLM_MAX_TOKENS` | `512` | Default max new tokens |
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `DATABASE_URL` | `sqlite:///data/jollof.db` | Relational DB for user history. Use `postgresql+asyncpg://...` for Postgres |
@@ -556,9 +563,10 @@ It covers:
 
 | Component | Technology | Reason |
 |---|---|---|
-| Agent LLM | DeepSeek-R1:1.5b via Ollama | Fully local, no API keys, chain-of-thought reasoning |
-| Judge LLM | DeepSeek-R1:7b via Ollama | Stronger model for eval / LLM-as-judge metrics |
+| Agent LLM | Qwen3:1.7b via Ollama | Fast, naturalistic text; task-specific think/no-think modes |
+| Judge LLM | DeepSeek-R1:1.5b via Ollama | Reasoning-always model — better as evaluator than generator |
 | Embeddings | nomic-embed-text via Ollama | Served over HTTP — no PyTorch in the API image |
 | Vector DB | ChromaDB | Persistent, metadata-filterable, Docker-friendly |
+| Relational DB | SQLite (aiosqlite) | User history and review persistence; swap to Postgres via `DATABASE_URL` |
 | API Framework | FastAPI | Async, auto-docs, Pydantic validation |
-| Evaluation | ROUGE + BERTScore + BLEU + DeepEval | Covers all rubric metrics |
+| Evaluation | ROUGE + BERTScore + BLEU + DeepEval | Covers all rubric metrics (eval-only dependencies in `requirements-eval.txt`) |

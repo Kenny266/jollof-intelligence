@@ -5,6 +5,8 @@ services:
     profiles: [cpu-local]
     ports:
       - "8001:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
     volumes:
       # Bind mount: persists pulled model weights between container restarts
       - ./ollama_models/deepseek:/root/.ollama
@@ -22,6 +24,8 @@ services:
     profiles: [cpu-local]
     ports:
       - "8002:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
     volumes:
       - ./ollama_models/judge:/root/.ollama
     entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull ${JUDGE_MODEL} && wait"]
@@ -38,6 +42,8 @@ services:
     profiles: [cpu-local]
     ports:
       - "8003:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
     volumes:
       - ./ollama_models/embed:/root/.ollama
     entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull ${EMBEDDING_MODEL} && wait"]
@@ -52,7 +58,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: jollof-api
+    image: backend-api
+    container_name: backend-api
     profiles: [cpu-local]
     ports:
       - "8000:8000"

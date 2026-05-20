@@ -1,7 +1,7 @@
 .PHONY: help setup install test \
         pipeline-download pipeline-preprocess pipeline-seed pipeline-textualize pipeline-index pipeline \
         run docker-build docker-up docker-down docker-stop docker-start docker-logs docker-shell docker-clean \
-        eval-a eval-b eval-all
+        eval-a eval-b eval-all docker-clean-data
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -51,19 +51,29 @@ test:
 # ──────────────────────────────────────────────────────────────────────────────
 pipeline-download:
 	# PYTHONPATH="$(CURDIR)" python -m data.pipeline.download
+	@echo "Running download pipeline..."
 	docker exec -it -w /app jollof-api python -m data.pipeline.download
+	@echo "✓ Download pipeline complete"
 
 pipeline-preprocess:
+	@echo "Running preprocess pipeline..."
 	docker exec -it -w /app jollof-api python -m data.pipeline.preprocess
+	@echo "✓ Preprocess pipeline complete"
 
 pipeline-seed:
+	@echo "Running seed pipeline..."
 	docker exec -it -w /app jollof-api python -m data.pipeline.seed_db
+	@echo "✓ Seed pipeline complete"
 
 pipeline-textualize:
+	@echo "Running textualize pipeline..."
 	docker exec -it -w /app jollof-api python -m data.pipeline.textualize
+	@echo "✓ Textualize pipeline complete"
 
 pipeline-index:
+	@echo "Running index pipeline..."
 	docker exec -it -w /app jollof-api python -m data.pipeline.index
+	@echo "✓ Index pipeline complete"
 
 pipeline:
 	@echo "Running full pipeline..."
@@ -73,6 +83,9 @@ pipeline:
 	make pipeline-textualize
 	make pipeline-index
 	@echo "✓ Full pipeline complete"
+	@echo ""
+	@echo ""
+	@echo "✓ Services running – API at http://localhost:8000/docs"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -80,36 +93,43 @@ pipeline:
 # ──────────────────────────────────────────────────────────────────────────────
 
 docker-up:
-	docker compose --profile cpu-local up --build -d
+	cd backend && docker compose --profile cpu-local up --build -d
 	@echo "✓ Services started – API at http://localhost:8000/docs"
 
 docker-down:
-	docker compose --profile cpu-local down
+	cd backend && docker compose --profile cpu-local down
 
 docker-stop:
-	docker compose --profile cpu-local stop
+	cd backend && docker compose --profile cpu-local stop ollama-qwen ollama-judge ollama-embed backend-api
 
 docker-start:
-	docker compose --profile cpu-local start
+	cd backend && docker compose --profile cpu-local start ollama-qwen ollama-judge ollama-embed backend-api
 
 docker-logs:
-	docker compose --profile cpu-local logs -f
+	cd backend && docker compose --profile cpu-local logs -f
 
 docker-shell:
-	docker exec -it jollof-api bash
+	cd backend && docker exec -it jollof-api bash
 
 docker-clean:
 # Wipe, stop and remove all containers (incl. Ollama) and files
-	docker compose --profile cpu-local down -v
-	rm -rf proto/generated
-	rm -rf .pytest_cache
-	rm -rf .mypy_cache
-	rm -rf .ruff_cache
-	-docker rm -f ollama-qwen ollama-judge 2>/dev/null || true
+	cd backend && docker compose --profile cpu-local down -v
+	cd backend && rm -rf proto/generated .pytest_cache .mypy_cache .ruff_cache
+	-cd backend && docker rm -f ollama-qwen ollama-judge ollama-embed 2>/dev/null || true
 	@echo "✓ Clean"
+
+docker-clean-data:
+	@echo "Cleaning data..."
+	rm -f backend/data/jollof.db
+	rm -f backend/data/raw/*
+	rm -f backend/data/processed/*
+	rm -rf backend/data/chroma_db/
+	@echo "✓ Data cleaned"
+
 
 docker-reset:
 	make docker-clean
+	make docker-clean-data
 	sleep 5
 	make docker-up
 
@@ -119,14 +139,22 @@ docker-reset:
 # ──────────────────────────────────────────────────────────────────────────────
 eval-a:
 	@echo "Running evaluation suite (Task A)..."
-	PYTHONPATH=$(CURDIR) python -m eval.suite --task a
+	cd backend && PYTHONPATH=$(CURDIR) python -m eval.suite --task a
 
 eval-b:
 	@echo "Running evaluation suite (Task B)..."
-	PYTHONPATH=$(CURDIR) python -m eval.suite --task b
+	cd backend && PYTHONPATH=$(CURDIR) python -m eval.suite --task b
 
 eval-all:
+	@echo "Downloading dependencies"
+	cd backend && pip install -r requirements-eval.txt
+	@echo "✓ Dependencies downloaded"
+	@echo ".............."
+	@echo ".............."
+	@echo ".............."
 	@echo "Running evaluation suite..."
+	@echo "Running evaluation suite (Task A)..."
 	eval-a
+	@echo "Running evaluation suite (Task B)..."
 	eval-b
 	@echo "✓ Evaluation complete – reports in eval/reports/"

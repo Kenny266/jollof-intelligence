@@ -14,9 +14,11 @@ RUN python -m venv /opt/venv
 # Put the venv on PATH so every subsequent RUN and CMD uses it automatically
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies into the venv (layer-cached before code copy)
-COPY requirements.txt .
-
+# Install runtime dependencies into the venv (layer-cached before code copy).
+# Eval dependencies (bert-score, deepeval, datasets, …) live in
+# requirements-eval.txt and are intentionally excluded from the API image
+# to avoid the 500 MB+ torch download at build time.
+COPY requirements.txt requirements-eval.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code

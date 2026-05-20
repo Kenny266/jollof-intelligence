@@ -33,7 +33,13 @@ def _embed_texts(texts: list[str]) -> list[list[float]]:
             try:
                 resp = client.post(url, json={"model": model, "prompt": text})
                 resp.raise_for_status()
-                embeddings.append(resp.json()["embedding"])
+                emb = resp.json().get("embedding", [])
+                if not emb:
+                    raise RuntimeError(
+                        f"Ollama returned empty embedding for model '{model}'. "
+                        "Input text may be empty or exceed the model's context window."
+                    )
+                embeddings.append(emb)
             except httpx.HTTPStatusError as exc:
                 logger.error("Ollama embed HTTP error for model %s: %s", model, exc)
                 raise RuntimeError(f"Embedding request failed: {exc}") from exc
