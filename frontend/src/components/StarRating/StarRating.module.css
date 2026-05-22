@@ -1,0 +1,30 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.starFilled {
+  color: #e87722;
+}
+
+.starEmpty {
+  color: #d4c5b0;
+}
+
+.numeric {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-left: 4px;
+}

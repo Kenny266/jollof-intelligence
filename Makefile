@@ -52,27 +52,27 @@ test:
 pipeline-download:
 	# PYTHONPATH="$(CURDIR)" python -m data.pipeline.download
 	@echo "Running download pipeline..."
-	docker exec -it -w /app jollof-api python -m data.pipeline.download
+	docker exec -it -w /app backend-api python -m data.pipeline.download
 	@echo "✓ Download pipeline complete"
 
 pipeline-preprocess:
 	@echo "Running preprocess pipeline..."
-	docker exec -it -w /app jollof-api python -m data.pipeline.preprocess
+	docker exec -it -w /app backend-api python -m data.pipeline.preprocess
 	@echo "✓ Preprocess pipeline complete"
 
 pipeline-seed:
 	@echo "Running seed pipeline..."
-	docker exec -it -w /app jollof-api python -m data.pipeline.seed_db
+	docker exec -it -w /app backend-api python -m data.pipeline.seed_db
 	@echo "✓ Seed pipeline complete"
 
 pipeline-textualize:
 	@echo "Running textualize pipeline..."
-	docker exec -it -w /app jollof-api python -m data.pipeline.textualize
+	docker exec -it -w /app backend-api python -m data.pipeline.textualize
 	@echo "✓ Textualize pipeline complete"
 
 pipeline-index:
 	@echo "Running index pipeline..."
-	docker exec -it -w /app jollof-api python -m data.pipeline.index
+	docker exec -it -w /app backend-api python -m data.pipeline.index
 	@echo "✓ Index pipeline complete"
 
 pipeline:

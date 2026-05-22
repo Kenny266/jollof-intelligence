@@ -1,0 +1,28 @@
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background-color: #fff3e0;
+  border: 1px solid #e87722;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.text {
+  font-size: 0.9375rem;
+  color: #7a3b00;
+  line-height: 1.5;
+}
+
+.label {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 4px;
+}
