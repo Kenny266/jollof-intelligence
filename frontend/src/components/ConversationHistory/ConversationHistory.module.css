@@ -1,0 +1,94 @@
+.container {
+  background-color: #f9f5f0;
+  border: 1px solid #d4c5b0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.clearButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: transparent;
+  color: #cc0000;
+  border: 1.5px solid #cc0000;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.clearButton:hover {
+  background-color: #cc0000;
+  color: #ffffff;
+}
+
+.clearButton:focus-visible {
+  outline: 3px solid #e87722;
+  outline-offset: 2px;
+}
+
+.turns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d4c5b0 #f9f5f0;
+}
+
+.turn {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.turnUser {
+  background-color: #e8f5e9;
+  border-left: 3px solid #008751;
+}
+
+.turnAssistant {
+  background-color: #ffffff;
+  border-left: 3px solid #e87722;
+  border: 1px solid #d4c5b0;
+  border-left: 3px solid #e87722;
+}
+
+.role {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.roleUser {
+  color: #006b40;
+}
+
+.roleAssistant {
+  color: #7a3b00;
+}
+
+.content {
+  color: #1a1a1a;
+}

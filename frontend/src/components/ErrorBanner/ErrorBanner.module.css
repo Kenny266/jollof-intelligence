@@ -1,0 +1,51 @@
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background-color: #fff0f0;
+  border: 1px solid #cc0000;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.content {
+  flex: 1;
+}
+
+.message {
+  color: #7a0000;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #cc0000;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.retryButton:hover {
+  background-color: #a80000;
+}
+
+.retryButton:focus-visible {
+  outline: 3px solid #e87722;
+  outline-offset: 2px;
+}

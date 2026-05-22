@@ -1,0 +1,79 @@
+.card {
+  background-color: #ffffff;
+  border: 1px solid #d4c5b0;
+  border-radius: 12px;
+  padding: 20px;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.titleBlock {
+  flex: 1;
+}
+
+.title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+}
+
+.author {
+  font-size: 0.875rem;
+  color: #555555;
+}
+
+.scoreBadge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  background-color: #e8f5e9;
+  color: #006b40;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.metaTag {
+  font-size: 0.8125rem;
+  color: #555555;
+  background-color: #f9f5f0;
+  border: 1px solid #d4c5b0;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.reason {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #1a1a1a;
+  border-top: 1px solid #d4c5b0;
+  padding-top: 12px;
+  font-style: italic;
+}
+
+.reasonLabel {
+  font-style: normal;
+  font-weight: 700;
+  color: #e87722;
+  margin-right: 4px;
+}
