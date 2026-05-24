@@ -1,8 +1,9 @@
 .cursor/
+.kiro/
+.vscode/
 .env
 .env.local
 .env.*.local
-.vscode/
 dist/
 *.tar.gz
 backend/ollama_models/**
@@ -12,6 +13,3 @@ backend/ollama_models/**
 !backend/ollama_models/generation/.gitkeep
 !backend/ollama_models/judge/.gitkeep
 !backend/ollama_models/embed/.gitkeep
-.kiro/
-.vscode/
-.cursor/
