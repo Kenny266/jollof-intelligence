@@ -141,13 +141,29 @@ cp .env.example .env
 
 # 1. Download pre-packaged Ollama weights + seeded demo data (one-time, ~3–4 GB)
 make judge-setup
+# Without make:
+cp -n .env.example .env
+bash scripts/package_submission_assets.sh fetch-models
+bash scripts/package_submission_assets.sh fetch-demo-data
 
 # 2. Start stack (3× Ollama + API + frontend UI)
 make docker-up
+# Without make:
+docker compose --profile cpu-local up --build -d
 
 # 3. Open services
 # API docs → http://localhost:8000/docs
 # Demo UI   → http://localhost:5173
+
+# 4. Stop containers when done (data is preserved)
+make docker-stop
+# Without make:
+docker compose --profile cpu-local stop ollama-generation ollama-judge ollama-embed backend frontend
+
+# 5. Full wipe (removes containers and volumes — use to reset completely)
+make docker-clean
+# Without make:
+docker compose --profile cpu-local down -v
 ```
 
 > **For judges:** the GitHub Release attached to this submission includes pre-packaged Ollama model weights and seeded demo data (SQLite + all three ChromaDB collections). No `make pipeline` needed. See [Judge quick start](#judge-quick-start) for details and fallback instructions.
@@ -169,11 +185,13 @@ The API container waits until all three Ollama services are healthy before start
 ## Running with Docker (recommended)
 
 ```bash
-make docker-up       # Start all services
-make docker-down     # Stop and remove containers
-make docker-logs     # Tail logs from all containers
-make docker-shell    # Bash shell inside the backend container
-make docker-reset    # Wipe containers, data, and rebuild from scratch
+make docker-up       # docker compose --profile cpu-local up --build -d
+make docker-stop     # docker compose --profile cpu-local stop ollama-generation ollama-judge ollama-embed backend frontend
+make docker-start    # docker compose --profile cpu-local start ollama-generation ollama-judge ollama-embed backend frontend
+make docker-down     # docker compose --profile cpu-local down
+make docker-logs     # docker compose --profile cpu-local logs -f
+make docker-shell    # docker exec -it backend-api bash
+make docker-clean    # docker compose --profile cpu-local down -v
 ```
 
 **Services and ports:**
@@ -633,9 +651,15 @@ cp .env.example .env
 
 # 3. Download and extract models + demo data (~3–4 GB, one-time)
 make judge-setup
+# Without make:
+cp -n .env.example .env
+bash scripts/package_submission_assets.sh fetch-models
+bash scripts/package_submission_assets.sh fetch-demo-data
 
 # 4. Start the full stack (Ollama will be healthy in ~1–2 min — no model pull needed)
 make docker-up
+# Without make:
+docker compose --profile cpu-local up --build -d
 
 # 5. Open services
 # API docs → http://localhost:8000/docs
@@ -649,7 +673,11 @@ No `make pipeline` needed — SQLite and all three ChromaDB collections (`review
 ```bash
 cp .env.example .env
 make docker-up    # pulls ~3–4 GB of Ollama models on first run
+# Without make:
+docker compose --profile cpu-local up --build -d
+
 make pipeline     # 8-step pipeline: download, preprocess, seed, index
+# Without make: run each pipeline step (see Data pipeline section)
 ```
 
 ### Disk and RAM requirements

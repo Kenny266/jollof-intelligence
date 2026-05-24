@@ -142,10 +142,10 @@ docker-down:
 	docker compose --profile cpu-local down
 
 docker-stop:
-	docker compose --profile cpu-local stop ollama-generation ollama-judge ollama-embed backend-api frontend-web
+	docker compose --profile cpu-local stop ollama-generation ollama-judge ollama-embed backend frontend
 
 docker-start:
-	docker compose --profile cpu-local start ollama-generation ollama-judge ollama-embed backend-api frontend-web
+	docker compose --profile cpu-local start ollama-generation ollama-judge ollama-embed backend frontend
 
 docker-logs:
 	docker compose --profile cpu-local logs -f
