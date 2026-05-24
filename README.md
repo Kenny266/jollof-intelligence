@@ -137,19 +137,22 @@ frontend/
 ```bash
 # 0. Configure environment (first time only)
 cp .env.example .env
+# Bundle URLs are pre-filled in .env.example — see Judge quick start if you need to change them
 
-# 1. Start stack (3× Ollama + API + frontend UI)
+# 1. Download pre-packaged Ollama weights + seeded demo data (one-time, ~3–4 GB)
+make judge-setup
+
+# 2. Start stack (3× Ollama + API + frontend UI)
 make docker-up
-
-# 2. Seed data (first time only — downloads ~50k review sample)
-make pipeline
 
 # 3. Open services
 # API docs → http://localhost:8000/docs
 # Demo UI   → http://localhost:5173
 ```
 
-On first run, each Ollama container pulls its model automatically:
+> **For judges:** the GitHub Release attached to this submission includes pre-packaged Ollama model weights and seeded demo data (SQLite + all three ChromaDB collections). No `make pipeline` needed. See [Judge quick start](#judge-quick-start) for details and fallback instructions.
+
+**Model weights** are extracted by `make judge-setup` into `backend/ollama_models/{generation,judge,embed}/` — `docker-up` picks them up immediately with no HuggingFace or model pull:
 
 | Service | Model | Approx. size | Cached at |
 |---|---|---|---|
@@ -158,6 +161,8 @@ On first run, each Ollama container pulls its model automatically:
 | `ollama-embed` | `nomic-embed-text` | ~274 MB | `backend/ollama_models/embed/` |
 
 The API container waits until all three Ollama services are healthy before starting. Subsequent `docker-up` calls reuse cached weights and start in seconds.
+
+**Developer / fresh-install fallback:** if you are not using the release bundles, Ollama containers will pull models on first run and you will need to seed the data separately — see [Judge quick start § Fallback](#judge-quick-start) and [Data pipeline](#data-pipeline).
 
 ---
 
@@ -263,7 +268,9 @@ npm run lint         # ESLint
 
 ## Data pipeline
 
-Run once before making API calls. Each step saves output files that the next step reads from.
+> **Judges using release bundles can skip this section** — SQLite and all three ChromaDB collections are pre-seeded by `make judge-setup`.
+
+Run once before making API calls if you are building from scratch. Each step saves output files that the next step reads from.
 
 ```bash
 # From repo root (requires docker-up):
@@ -601,7 +608,7 @@ Copy [`.env.example`](.env.example) to `.env` at the **repo root**. Backend sett
 
 ## Solution paper
 
-The solution paper is at `backend/paper/solution_paper.pdf`.
+The solution paper is at [`SOLUTION_PAPER.md`](SOLUTION_PAPER.md) (repo root).
 
 It covers problem framing, system architecture, Task A and Task B pipelines, evaluation methodology, ablation studies, and limitations.
 

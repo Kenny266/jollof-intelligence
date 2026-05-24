@@ -9,7 +9,7 @@ Data & AI Summit | Submitted: 24 May 2026
 
 Online review platforms encode rich behavioural signals — ratings, review language, and browsing patterns — yet most recommender systems reduce users to static preference vectors, discarding the dynamic, context-sensitive nature of human choice. We present **Jollof Intelligence**, a dual-task LLM agent system that (i) simulates personalised user reviews and star ratings for unseen items (Task A), and (ii) delivers grounded, conversational book recommendations (Task B), both contextualised for Nigerian English outputs.
 
-The system runs entirely on local infrastructure: three Ollama model instances, a persistent ChromaDB vector store with three specialised collections, and a SQLite relational database for audit and verification. Task A combines a rule-based persona builder with retrieval-augmented generation (RAG); Task B introduces a dual-collection embedding architecture in which a user preference vector, constructed by mean-pooling historical review embeddings, is matched against item description vectors via cosine similarity. A constrained LLM reranker produces Nigerian-inflected explanations while a post-generation grounding filter eliminates hallucinated catalogue entries. The full system is containerised, reproducible with a single `make pipeline` command, and ships with an offline evaluation suite and a React demo UI.
+The system runs entirely on local infrastructure: three Ollama model instances, a persistent ChromaDB vector store with three specialised collections, and a SQLite relational database for audit and verification. Task A combines a rule-based persona builder with retrieval-augmented generation (RAG); Task B introduces a dual-collection embedding architecture in which a user preference vector, constructed by mean-pooling historical review embeddings, is matched against item description vectors via cosine similarity. A constrained LLM reranker produces Nigerian-inflected explanations while a post-generation grounding filter eliminates hallucinated catalogue entries. The full system is containerised and ships with an offline evaluation suite and a React demo UI. Judges can reproduce the complete environment from the GitHub Release bundles using two commands (`make judge-setup && make docker-up`) with no dataset download or model pull required; maintainers can regenerate all artefacts from scratch via `make pipeline`.
 
 ---
 
@@ -25,7 +25,7 @@ We built Jollof Intelligence around three design convictions:
 2. **Retrieval should be grounded.** Recommendations must come from the real item catalogue — not from LLM confabulation — or they are useless to a user.
 3. **Context matters.** For a Nigerian user base, outputs that read like foreign marketing copy fail on a dimension that raw metric scores do not capture.
 
-The dataset is Amazon Reviews 2023 (Books), sampled to ~50,000 reviews across up to 10,000 users. The system is fully local: no cloud API keys are required, and judges can reproduce every output with `make docker-up && make pipeline`.
+The dataset is Amazon Reviews 2023 (Books), sampled to ~50,000 reviews across up to 10,000 users. The system is fully local: no cloud API keys are required, and judges can reproduce every output with pre-packaged GitHub Release assets — `make judge-setup && make docker-up` — with no dataset download or indexing step required.
 
 ---
 
@@ -96,6 +96,8 @@ Separating generation and embedding into distinct containers eliminates concurre
 ## 3. Data Pipeline
 
 The offline ingestion pipeline runs as a sequence of eight steps, each producing a stable artifact consumed by the next. The entire pipeline is invoked with `make pipeline` and runs inside the `backend-api` Docker container.
+
+**Judge reproduction path.** The GitHub Release attached to this submission ships two pre-built bundles: `ollama_models.tar.gz` (all three Ollama model caches) and `demo_data.tar.gz` (a pre-seeded `jollof.db` SQLite database and all three ChromaDB collections). Running `make judge-setup` downloads and extracts both; `make docker-up` then starts the full stack without any model pull or pipeline execution. The pipeline steps below remain the maintainer path for regenerating bundles from scratch via `make package-submission`.
 
 | Step | Script | Input | Output |
 |---|---|---|---|
@@ -294,7 +296,7 @@ The key contributions are:
 - A **dual-collection embedding architecture** for Task B that cleanly separates user behavioural history from item catalogue semantics, enabling hallucination-free cosine-similarity retrieval for both warm and cold-start users.
 - A **constrained LLM reranker** that contributes ordering and natural language reasoning while all factual metadata is grounded to the retrieval layer, eliminating the ASIN hallucination problem common to LLM-first recommendation designs.
 - A **Nigerian English contextualisation layer** implemented as a structured system prompt, producing outputs that read as authentic Nigerian user voice across both tasks — a rubric bonus that emerged as a natural design goal rather than an afterthought.
-- A **fully local, containerised stack** (three Ollama instances, ChromaDB, SQLite, FastAPI, React) that any judge can reproduce with two commands and no external credentials.
+- A **fully local, containerised stack** (three Ollama instances, ChromaDB, SQLite, FastAPI, React) that any judge can reproduce with two commands — `make judge-setup` and `make docker-up` — and no external credentials or dataset downloads.
 
 The system reflects a deliberate trade-off: smaller local models over larger cloud models, deterministic retrieval over unconstrained LLM generation, and reproducibility over marginal performance gains. Given the evaluation criteria — solution paper, code reproducibility, and behavioural fidelity alongside raw metrics — we believe this balance is the right one.
 
