@@ -25,8 +25,14 @@ data/raw/
 data/processed/
 data/chroma_db/
 
-# Model weights
-ollama_models/
+# Model weights (ignore contents but track .gitkeep placeholders for Docker bind mounts)
+ollama_models/**
+!ollama_models/generation/
+!ollama_models/judge/
+!ollama_models/embed/
+!ollama_models/generation/.gitkeep
+!ollama_models/judge/.gitkeep
+!ollama_models/embed/.gitkeep
 *.gguf
 *.safetensors
 *.bin

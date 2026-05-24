@@ -1,0 +1,20 @@
+[
+  {
+    "user_id": "USER_WARM_001",
+    "context": "African historical fiction",
+    "cold_start": false,
+    "relevant_items": ["B000001", "B000002"]
+  },
+  {
+    "user_id": "USER_WARM_002",
+    "context": "Space opera with political intrigue",
+    "cold_start": false,
+    "relevant_items": ["B000010", "B000011", "B000012"]
+  },
+  {
+    "user_id": "USER_COLD_001",
+    "context": "22-year-old Nigerian student who loves contemporary African fiction",
+    "cold_start": true,
+    "relevant_items": ["B000020", "B000021"]
+  }
+]

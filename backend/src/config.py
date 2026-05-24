@@ -1,15 +1,24 @@
 from functools import lru_cache
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-load_dotenv()
+ROOT_DIR = Path(__file__).resolve().parents[2]
+ENV_FILE = ROOT_DIR / ".env"
+
+load_dotenv(ENV_FILE)
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
-    ollama_base_url: str = str(os.getenv("OLLAMA_BASE_URL", "http://ollama-qwen:11434"))
+    ollama_base_url: str = str(os.getenv("OLLAMA_BASE_URL", "http://ollama-generation:11434"))
     agent_model: str = str(os.getenv("AGENT_MODEL", "qwen3:1.7b"))
 
     ollama_judge_url: str = str(os.getenv("OLLAMA_JUDGE_URL", "http://ollama-judge:11434"))
@@ -20,6 +29,8 @@ class Settings(BaseSettings):
 
     chroma_db_path: str = str(os.getenv("CHROMA_DB_PATH", "data/chroma_db"))
     chroma_collection: str = str(os.getenv("CHROMA_COLLECTION", "reviews"))
+    chroma_items_collection: str = str(os.getenv("CHROMA_ITEMS_COLLECTION", "items"))
+    chroma_user_reviews_collection: str = str(os.getenv("CHROMA_USER_REVIEWS_COLLECTION", "user_reviews"))
 
     retrieval_top_k: int = int(os.getenv("RETRIEVAL_TOP_K", 10))
     llm_temperature: float = float(os.getenv("LLM_TEMPERATURE", 0.7))   # type: ignore

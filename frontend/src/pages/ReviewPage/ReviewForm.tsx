@@ -8,7 +8,7 @@ interface ReviewFormProps {
   onSubmit: () => void;
   isLoading: boolean;
   errors: ReviewValidationErrors;
-  submitRef?: React.RefObject<HTMLButtonElement | null>;
+  submitRef?: React.Ref<HTMLButtonElement>;
 }
 
 export function ReviewForm({

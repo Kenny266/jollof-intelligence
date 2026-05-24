@@ -1,0 +1,108 @@
+services:
+  ollama-generation:
+    image: ollama/ollama:latest
+    container_name: ollama-generation
+    profiles: [cpu-local]
+    ports:
+      - "8001:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend/ollama_models/generation:/root/.ollama
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && (ollama list | grep -q \"${AGENT_MODEL}\" || ollama pull \"${AGENT_MODEL}\") && wait"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list | grep -q ${AGENT_MODEL}"]
+      interval: 60s
+      timeout: 60s
+      retries: 15
+      start_period: 60s
+
+  ollama-judge:
+    image: ollama/ollama:latest
+    container_name: ollama-judge
+    profiles: [cpu-local]
+    ports:
+      - "8002:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend/ollama_models/judge:/root/.ollama
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && (ollama list | grep -q \"${JUDGE_MODEL}\" || ollama pull \"${JUDGE_MODEL}\") && wait"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list | grep -q ${JUDGE_MODEL}"]
+      interval: 60s
+      timeout: 60s
+      retries: 15
+      start_period: 60s
+
+  ollama-embed:
+    image: ollama/ollama:latest
+    container_name: ollama-embed
+    profiles: [cpu-local]
+    ports:
+      - "8003:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend/ollama_models/embed:/root/.ollama
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && (ollama list | grep -q \"${EMBEDDING_MODEL}\" || ollama pull \"${EMBEDDING_MODEL}\") && wait"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list | grep -q ${EMBEDDING_MODEL}"]
+      interval: 60s
+      timeout: 60s
+      retries: 15
+      start_period: 60s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: backend-api
+    container_name: backend-api
+    profiles: [cpu-local]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/data
+    env_file:
+      - ./.env
+    depends_on:
+      ollama-generation:
+        condition: service_healthy
+      ollama-embed:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s
+      timeout: 60s
+      retries: 3
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    image: frontend-web
+    container_name: frontend-web
+    profiles: [cpu-local]
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1"]
+      interval: 60s
+      timeout: 60s
+      retries: 15
+      start_period: 60s

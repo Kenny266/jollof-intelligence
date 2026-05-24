@@ -1,0 +1,20 @@
+[
+  {
+    "user_id": "USER_WARM_001",
+    "product_title": "Things Fall Apart",
+    "rating": 5,
+    "review": "Abeg, this book na true classic. Achebe show Igbo tradition well — honestly, e sweet me no be small."
+  },
+  {
+    "user_id": "USER_WARM_002",
+    "product_title": "Dune",
+    "rating": 4,
+    "review": "Good sci-fi epic with rich politics. Long book but the vibe carry you through."
+  },
+  {
+    "user_id": "USER_COLD_001",
+    "product_title": "Purple Hibiscus",
+    "rating": 4,
+    "review": "Warm Nigerian family story with strong characters. Adichie's prose dey clean."
+  }
+]

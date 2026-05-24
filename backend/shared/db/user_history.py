@@ -66,7 +66,11 @@ class UserHistoryRepository:
             return result.scalar_one()
 
     async def user_exists(self, user_id: str) -> bool:
-        """Return True if the user has at least one review in the DB."""
+        """Return True if the user exists in users table or has reviews."""
+        async with get_async_session() as session:
+            user = await session.get(User, user_id)
+            if user is not None:
+                return True
         return await self.count_reviews(user_id) > 0
 
     async def save_review(
