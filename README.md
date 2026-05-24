@@ -136,6 +136,8 @@ frontend/
 - At least 8 GB free disk space (Ollama model weights across three services)
 - 8+ GB RAM recommended
 
+### With Make
+
 ```bash
 # 0. Configure environment (first time only)
 cp .env.example .env
@@ -143,36 +145,44 @@ cp .env.example .env
 
 # 1. Download pre-packaged Ollama weights + seeded demo data (one-time, ~3–4 GB)
 make judge-setup
-# Without make:
-cp -n .env.example .env
-bash scripts/package_submission_assets.sh fetch-models
-bash scripts/package_submission_assets.sh fetch-demo-data
 
 # 2. Start stack (3× Ollama + API + frontend UI)
 make docker-up
 # Expected output when complete:
 # ✓ API: http://localhost:8000/docs | UI: http://localhost:5173
-# Without make:
-#   API docs → http://localhost:8000/docs
-#   Demo UI   → http://localhost:5173
-# Then open:
-#   API docs → http://localhost:8000/docs
-#   Demo UI   → http://localhost:5173
 
 # 3. Stop containers when done (data is preserved)
 make docker-stop
-# Without make:
-docker compose --profile cpu-local stop ollama-generation ollama-judge ollama-embed backend frontend
 
 # 4. Full wipe (removes containers and volumes — use to reset completely)
 make docker-clean
-# Without make:
+```
+
+### Without Make
+
+```bash
+# 0. Configure environment (first time only)
+cp -n .env.example .env
+# Bundle URLs are pre-filled in .env.example — see Judge quick start if you need to change them
+
+# 1. Download pre-packaged Ollama weights + seeded demo data (one-time, ~3–4 GB)
+bash scripts/package_submission_assets.sh fetch-models
+bash scripts/package_submission_assets.sh fetch-demo-data
+
+# 2. Start stack (3× Ollama + API + frontend UI)
+docker compose --profile cpu-local up --build -d
+echo "✓ API: http://localhost:8000/docs | UI: http://localhost:5173"
+
+# 3. Stop containers when done (data is preserved)
+docker compose --profile cpu-local stop ollama-generation ollama-judge ollama-embed backend frontend
+
+# 4. Full wipe (removes containers and volumes — use to reset completely)
 docker compose --profile cpu-local down -v
 ```
 
 > **For judges:** the GitHub Release attached to this submission includes pre-packaged Ollama model weights and seeded demo data (SQLite + all three ChromaDB collections). Demo data lands at `backend/data/jollof.db` and `backend/data/chroma_db/` — no external DB setup. No `make pipeline` needed. See [Judge quick start](#judge-quick-start) for details and fallback instructions.
 
-`make docker-up` prints the service URLs when the stack is up. The API container waits for all three Ollama services to be healthy first (~1–2 min on first run).
+`make docker-up` prints the service URLs when the stack is up. Without Make, run the `echo` line above after `docker compose up`. The API container waits for all three Ollama services to be healthy first (~1–2 min on first run).
 
 **Model weights** are extracted by `make judge-setup` into `backend/ollama_models/{generation,judge,embed}/` — `docker-up` picks them up immediately with no HuggingFace or model pull:
 
@@ -658,6 +668,8 @@ Pre-packaged bundles (~3–4 GB models + demo data) let you skip the full pipeli
 
 ### Fast path (with submission bundles)
 
+#### With Make
+
 ```bash
 # 1. Clone and configure
 git clone <repo-url>
@@ -671,34 +683,54 @@ cp .env.example .env
 
 # 3. Download and extract models + demo data (~3–4 GB, one-time)
 make judge-setup
-# Without make:
-cp -n .env.example .env
-bash scripts/package_submission_assets.sh fetch-models
-bash scripts/package_submission_assets.sh fetch-demo-data
 
 # 4. Start the full stack (Ollama will be healthy in ~1–2 min — no model pull needed)
 make docker-up
 # Expected output when complete:
 # ✓ API: http://localhost:8000/docs | UI: http://localhost:5173
-# Without make:
+```
+
+#### Without Make
+
+```bash
+# 1. Clone and configure
+git clone <repo-url>
+cd jollof-intelligence
+cp -n .env.example .env
+
+# 2. Set bundle URLs (from GitHub Release attached to this submission)
+#    Edit .env and fill in:
+#      MODELS_BUNDLE_URL=<release-asset-url>
+#      DEMO_DATA_BUNDLE_URL=<release-asset-url>
+
+# 3. Download and extract models + demo data (~3–4 GB, one-time)
+bash scripts/package_submission_assets.sh fetch-models
+bash scripts/package_submission_assets.sh fetch-demo-data
+
+# 4. Start the full stack (Ollama will be healthy in ~1–2 min — no model pull needed)
 docker compose --profile cpu-local up --build -d
-# Then open:
-#   API docs → http://localhost:8000/docs
-#   Demo UI  → http://localhost:5173
+echo "✓ API: http://localhost:8000/docs | UI: http://localhost:5173"
 ```
 
 No `make pipeline` needed — SQLite and all three ChromaDB collections (`reviews`, `items`, `user_reviews`) are pre-seeded in the bundle.
 
 ### Fallback (no bundles / fresh install)
 
+#### With Make
+
 ```bash
 cp .env.example .env
 make docker-up    # pulls ~3–4 GB of Ollama models on first run
-# Without make:
-docker compose --profile cpu-local up --build -d
-
 make pipeline     # 8-step pipeline: download, preprocess, seed, index
-# Without make: run each pipeline step (see Data pipeline section)
+```
+
+#### Without Make
+
+```bash
+cp -n .env.example .env
+docker compose --profile cpu-local up --build -d
+echo "✓ API: http://localhost:8000/docs | UI: http://localhost:5173"
+# Run each pipeline step manually — see Data pipeline section
 ```
 
 ### Disk and RAM requirements
@@ -743,4 +775,3 @@ cp .env.example .env
 make judge-setup && make docker-up
 # Confirm /health, Task A, Task B, and verification API all respond correctly
 ```
-
