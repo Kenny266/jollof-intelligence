@@ -42,6 +42,7 @@ ollama_models/**
 
 # Evaluation reports (generated artefacts)
 eval/reports/
+data/eval/reports/
 
 # Jupyter
 .ipynb_checkpoints/

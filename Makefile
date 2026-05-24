@@ -2,7 +2,7 @@
         pipeline-download pipeline-preprocess pipeline-seed pipeline-textualize pipeline-index \
         pipeline-textualize-items pipeline-index-items pipeline-index-user-reviews pipeline \
         run docker-build docker-up docker-down docker-stop docker-start docker-logs docker-shell docker-clean \
-        eval-generate eval-a eval-b eval-all docker-clean-data \
+        eval-install eval-generate eval-a eval-b eval-all docker-check-backend docker-clean-data \
         package-models package-demo-data package-submission \
         fetch-models fetch-demo-data judge-setup
 
@@ -24,10 +24,11 @@ help:
 	@echo "  pipeline-textualize-items   Generate item description paragraphs for the items collection"
 	@echo "  pipeline-index-items        Embed item paragraphs into the ChromaDB items collection"
 	@echo "  pipeline-index-user-reviews Index review paragraphs into the user_reviews collection"
-	@echo "  eval-generate       Build evaluation JSON from parquet or samples"
-	@echo "  eval-a              Run Task A evaluation suite"
-	@echo "  eval-b              Run Task B evaluation suite"
-	@echo "  eval-all            Run both evaluation suites"
+	@echo "  eval-install        Install eval deps inside backend-api container (requires docker-up)"
+	@echo "  eval-generate       Build evaluation JSON from parquet or samples (Docker)"
+	@echo "  eval-a              Run Task A evaluation suite (Docker)"
+	@echo "  eval-b              Run Task B evaluation suite (Docker)"
+	@echo "  eval-all            Install deps + generate datasets + run both suites (Docker)"
 	@echo ""
 	@echo "  Docker"
 	@echo "  docker-up           Start Ollama + backend + frontend via docker compose"
@@ -220,38 +221,35 @@ judge-setup: setup-env fetch-models fetch-demo-data
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Evaluation
+# Evaluation (runs inside backend-api container — requires make docker-up)
 # ──────────────────────────────────────────────────────────────────────────────
-eval-generate:
+docker-check-backend:
+	@docker inspect -f '{{.State.Running}}' backend-api 2>/dev/null | grep -q true || \
+	  (echo "Error: backend-api is not running. Run: make docker-up" && exit 1)
+
+eval-install: docker-check-backend
+	@echo "Installing evaluation dependencies in backend-api container..."
+	docker exec -u root -w /app backend-api pip install --no-cache-dir -r requirements-eval.txt
+	@echo "✓ Eval dependencies installed in container"
+
+eval-generate: docker-check-backend
 	@echo "Generating evaluation datasets..."
-	cd backend && python scripts/generate_eval_preds.py
+	docker exec -w /app backend-api python scripts/generate_eval_preds.py
 	@echo "✓ Evaluation datasets written to backend/data/eval/"
 
-eval-a:
+eval-a: eval-install
 	@echo "Running evaluation suite (Task A)..."
-	cd backend && python -m eval.suite --task a \
+	docker exec -w /app backend-api python -m eval.suite --task a \
 	  --preds data/eval/task_a_preds.json \
 	  --refs data/eval/task_a_refs.json --fidelity
+	@echo "✓ Task A report → backend/eval/reports/"
 
 eval-b:
 	@echo "Running evaluation suite (Task B)..."
-	cd backend && python -m eval.suite --task b \
+	docker exec -w /app backend-api python -m eval.suite --task b \
 	  --preds data/eval/task_b_preds.json \
 	  --refs data/eval/task_b_refs.json --k 10
+	@echo "✓ Task B report → backend/eval/reports/"
 
-eval-all:
-	@echo "Downloading dependencies"
-	cd backend && pip install -r requirements-eval.txt
-	@echo "✓ Dependencies downloaded"
-	@echo ".............."
-	@echo ".............."
-	@echo ".............."
-	@echo "Generating evaluation datasets..."
-	cd backend && python scripts/generate_eval_preds.py
-	@echo "✓ Evaluation datasets written to backend/data/eval/"
-	@echo "Running evaluation suite..."
-	@echo "Running evaluation suite (Task A)..."
-	make eval-a
-	@echo "Running evaluation suite (Task B)..."
-	make eval-b
-	@echo "✓ Evaluation complete – reports in eval/reports/"
+eval-all: eval-install eval-generate eval-a eval-b
+	@echo "✓ Evaluation complete – reports in backend/eval/reports/"

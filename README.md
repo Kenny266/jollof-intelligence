@@ -246,8 +246,10 @@ source .venv/bin/activate        # Linux/Mac
 cd backend
 pip install -r requirements.txt
 
-# For the evaluation suite (adds bert-score, deepeval, datasets, etc.):
-pip install -r requirements-eval.txt
+# Evaluation suite runs in Docker (recommended — see Evaluation suite section):
+#   make docker-up && make eval-all
+# Local eval install (optional, requires Python 3.12):
+# pip install -r requirements-eval.txt
 
 # 3. Start Ollama and pull required models
 ollama pull qwen3:1.7b
@@ -552,25 +554,33 @@ curl http://localhost:8000/api/v1/items/0385474547
 
 ## Evaluation suite
 
+Evaluation runs **inside the `backend-api` Docker container** (Python 3.12) so judges and maintainers avoid host Python / build-tool issues. Requires the stack to be up:
+
 ```bash
-make eval-generate   # refresh eval JSON (optional)
-make eval-a          # Task A: ROUGE, BERTScore, BLEU, RMSE (+ fidelity requires ollama-judge)
-make eval-b          # Task B: NDCG@10, Hit Rate@10, MRR, cold/warm subsets
-make eval-all        # both suites
+make docker-up
+make eval-all        # install eval deps + generate datasets + run both suites
 ```
 
-Or run directly from `backend/`:
+Individual targets:
 
 ```bash
-python scripts/generate_eval_preds.py
+make eval-install    # one-time: pip install -r requirements-eval.txt in container
+make eval-generate   # refresh eval JSON (optional)
+make eval-a          # Task A: ROUGE, BERTScore, BLEU, RMSE (+ fidelity via ollama-judge)
+make eval-b          # Task B: NDCG@10, Hit Rate@10, MRR, cold/warm subsets
+```
 
-python -m eval.suite \
+Or run directly inside the container:
+
+```bash
+docker exec -u root -w /app backend-api pip install --no-cache-dir -r requirements-eval.txt
+docker exec -w /app backend-api python scripts/generate_eval_preds.py
+docker exec -w /app backend-api python -m eval.suite \
   --task a \
   --preds data/eval/task_a_preds.json \
   --refs  data/eval/task_a_refs.json \
   --fidelity
-
-python -m eval.suite \
+docker exec -w /app backend-api python -m eval.suite \
   --task b \
   --preds data/eval/task_b_preds.json \
   --refs  data/eval/task_b_refs.json \
@@ -580,10 +590,11 @@ python -m eval.suite \
 **DeepEval RAG metrics** (requires ollama-judge):
 
 ```bash
-python -m eval.suite --task a --preds ... --refs ... --deepeval
+docker exec -w /app backend-api python -m eval.suite \
+  --task a --preds data/eval/task_a_preds.json --refs data/eval/task_a_refs.json --deepeval
 ```
 
-Reports are written to `backend/eval/reports/` in JSON and Markdown formats.
+Reports are written to `backend/eval/reports/` on the host (bind-mounted from the container) in JSON and Markdown formats.
 
 ---
 
@@ -658,7 +669,7 @@ Copy `[.env.example](.env.example)` to `.env` at the **repo root**. Backend sett
 
 The solution paper is at `[SOLUTION_PAPER.md](SOLUTION_PAPER.md)` (repo root).
 
-It covers problem framing, system architecture, Task A and Task B pipelines, evaluation methodology, ablation studies, and limitations.
+It covers problem framing, system architecture, Task A and Task B pipelines, ablation studies, and limitations. For the runnable evaluation suite, see [Evaluation suite](#evaluation-suite).
 
 ---
 
@@ -745,7 +756,7 @@ echo "✓ API: http://localhost:8000/docs | UI: http://localhost:5173"
 1. Run the [judge quick start](#judge-quick-start) above
 2. Call Task A or B via `/docs` or the demo UI at `http://localhost:5173`
 3. Verify outputs with the [Verification API](#verification-api) endpoints
-4. Run `make eval-all` to reproduce metric reports
+4. Run `make docker-up && make eval-all` to reproduce metric reports
 
 ---
 

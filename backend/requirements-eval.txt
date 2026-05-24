@@ -1,13 +1,12 @@
 # Evaluation dependencies — NOT installed in the production API image.
-# Install separately when running eval scripts:
-#   pip install -r requirements-eval.txt
+# Install inside the running backend-api container:
+#   make eval-install
+# Or: docker exec -u root -w /app backend-api pip install -r requirements-eval.txt
 -r requirements.txt
-
 # Evaluation — standard metrics
 rouge-score==0.1.2
 bert-score==0.3.13
 sacrebleu==2.4.2
 scikit-learn==1.4.2
-
 # Evaluation — DeepEval (LLM-as-judge)
 deepeval==1.3.0

@@ -79,7 +79,7 @@ flowchart TD
 
 Separating generation and embedding into distinct containers eliminates concurrency bottlenecks and prevents self-evaluation bias in the judge. Embedding is served over Ollama's HTTP API, keeping the application Docker image free of PyTorch or sentence-transformers (~500 MB saved).
 
-**ChromaDB (persistent HNSW)** — three named collections, each purpose-built (see §7 for store selection rationale):
+**ChromaDB (persistent HNSW)** — three named collections, each purpose-built (see §6 for store selection rationale):
 
 | Collection | Contents | Used by |
 |---|---|---|
@@ -87,7 +87,7 @@ Separating generation and embedding into distinct containers eliminates concurre
 | `items` | One doc per unique catalogue item (ASIN as ID) | Task B retrieval |
 | `user_reviews` | Same review paragraphs as `reviews` | Task B user vector construction |
 
-**SQLite (`jollof.db`)** — relational store for users, item catalogue, review history (tagged by `source`: `dataset`, `generated`, or `api`), and a full recommendation audit log (`RecommendationLog` + `RecommendationItem`). The `source` column enables precise separation of seed data from Task A write-backs. Persisted as a single file under `data/jollof.db` (see §7). Swappable to PostgreSQL via the `DATABASE_URL` environment variable.
+**SQLite (`jollof.db`)** — relational store for users, item catalogue, review history (tagged by `source`: `dataset`, `generated`, or `api`), and a full recommendation audit log (`RecommendationLog` + `RecommendationItem`). The `source` column enables precise separation of seed data from Task A write-backs. Persisted as a single file under `data/jollof.db` (see §6). Swappable to PostgreSQL via the `DATABASE_URL` environment variable.
 
 **React demo UI (port 5173)** — two pages: Review (Task A form + generated output) and Recommend (Task B form + recommendation cards with cold-start badge). Served by nginx in production via Docker.
 
@@ -199,55 +199,7 @@ After reranking, `generate_follow_up()` produces a conversational question to pr
 
 ---
 
-## 6. Evaluation
-
-### 6.1 Task A — User Modeling
-
-Task A is evaluated across two dimensions: automatic text quality metrics and LLM-based behavioural fidelity metrics (the latter require Ollama judge to be running).
-
-| Metric | Description | Score |
-|---|---|---|
-| ROUGE-1 / ROUGE-2 / ROUGE-L | N-gram overlap between generated and reference reviews | TBD (live eval) |
-| BERTScore F1 | Contextual embedding similarity of review text | TBD (live eval) |
-| BLEU | Corpus-level n-gram precision | TBD (live eval) |
-| RMSE | Star rating prediction error vs ground-truth ratings | TBD (live eval) |
-| Persona voice match (0–10) | LLM judge: does the review sound like this user's past writing? | TBD (live eval) |
-| Persona consistency (0–10) | LLM judge: is sentiment/rating consistent with history? | TBD (live eval) |
-| Nigerian English score (0–10) | LLM judge: Pidgin and cultural authenticity | TBD (live eval) |
-| Cultural specificity (0–10) | LLM judge: Nigerian context markers present | TBD (live eval) |
-
-Live evaluation is run with:
-
-```bash
-cd backend
-python scripts/generate_eval_preds.py --live --sample-size 50
-python -m eval.suite --task a --preds data/eval/task_a_preds.json \
-       --refs data/eval/task_a_refs.json --fidelity
-```
-
-### 6.2 Task B — Recommendation
-
-Task B is evaluated using standard information retrieval metrics at rank cutoff 10, split by warm and cold-start subsets. Results below are from the committed offline eval run (`task_B_eval_20260523_195710`).
-
-| Metric | Overall | Cold-start | Warm |
-|---|---|---|---|
-| NDCG@10 | 1.0000 | 1.0000 | 1.0000 |
-| Hit Rate@10 | 1.0000 | 1.0000 | 1.0000 |
-| MRR | 1.0000 | 1.0000 | 1.0000 |
-
-**On these scores.** The offline eval pipeline constructs predictions from the same `parent_asin` values used to build the reference set — the recommended item is, by construction, the relevant item. These scores therefore validate that the pipeline is correctly wired end-to-end (data flows, ASIN alignment, and metric computation are correct) but are not a measure of retrieval quality. Meaningful Task B evaluation requires live predictions against a held-out user cohort:
-
-```bash
-python scripts/generate_eval_preds.py --live --sample-size 100
-python -m eval.suite --task b --preds data/eval/task_b_preds.json \
-       --refs data/eval/task_b_refs.json --k 10
-```
-
-A live run over 100 sampled users would produce realistic NDCG@10 and Hit Rate@10 figures against references with multiple independently annotated relevant items per query.
-
----
-
-## 7. Design Decisions and Trade-offs
+## 6. Design Decisions and Trade-offs
 
 **Local LLMs via Ollama.** We chose fully local inference over cloud API calls (OpenAI, Anthropic) for three reasons: zero API key dependency means judges can reproduce the system out-of-the-box; inference costs are fixed regardless of request volume; and Ollama's container model allows clean model management. The trade-off is raw capability: `qwen3:1.7b` is a significantly smaller model than GPT-4o or Claude 3.5 Sonnet. For the review generation and reranking tasks at this scale, it is adequate; at production scale, a 7B or 14B parameter model would materially improve output quality.
 
@@ -265,7 +217,7 @@ A live run over 100 sampled users would produce realistic NDCG@10 and Hit Rate@1
 
 ---
 
-## 8. Ablation Notes
+## 7. Ablation Notes
 
 **Effect of the grounding filter.** Before adding the post-rerank grounding step, manual inspection of Task B outputs revealed that the reranker occasionally invented `item_id` values — typically plausible-looking ASINs that did not exist in the 50,000-item sample. The grounding filter drops these silently and, when fewer than `top_k` items survive, the fallback fills the remainder with similarity-ranked candidates. In practice, the filter reduces the output list size by zero to one item on most queries; a rare failure to parse the reranker JSON triggers the full fallback.
 
@@ -275,11 +227,11 @@ A live run over 100 sampled users would produce realistic NDCG@10 and Hit Rate@1
 
 ---
 
-## 9. Limitations and Future Work
+## 8. Limitations and Future Work
 
 **User vector quality.** Mean-pooling is a reasonable baseline but a poor model of preference drift. A user who read exclusively thriller novels for two years and recently switched to literary fiction will have a preference vector that blends both signals, potentially ranking neither genre highly. Time-decayed weighting or a learned aggregation function trained on held-out recommendation clicks would produce a substantially better warm retrieval signal.
 
-**Ground-truth sparseness.** The offline Task B evaluation builds one relevant item per query (the source ASIN from the sampled review). A proper held-out relevance set would annotate multiple relevant items per user query, weighted by engagement signals. Without this, NDCG and Hit Rate scores from live evaluation will be deflated even for correct recommendations.
+**Ground-truth sparseness.** A proper held-out relevance set would annotate multiple relevant items per user query, weighted by engagement signals. The current offline reference construction uses a single source ASIN per query, which limits how strongly any automated ranking score can be interpreted.
 
 **Model scale.** `qwen3:1.7b` runs on consumer hardware with 8 GB RAM, which is the constraint we optimised for. Stepping up to `qwen3:7b` or a fine-tuned Nigerian-English model would improve both review naturalness and reranker quality. The infrastructure is already parameterised by `AGENT_MODEL`, so this is a one-line config change.
 
@@ -289,7 +241,7 @@ A live run over 100 sampled users would produce realistic NDCG@10 and Hit Rate@1
 
 ---
 
-## 10. Conclusion
+## 9. Conclusion
 
 We have described Jollof Intelligence, a dual-task LLM agent system for user modeling and personalised book recommendation, built for the DSN × BCT Hackathon 3.0 challenge.
 
@@ -300,7 +252,7 @@ The key contributions are:
 - A **Nigerian English contextualisation layer** implemented as a structured system prompt, producing outputs that read as authentic Nigerian user voice across both tasks — a rubric bonus that emerged as a natural design goal rather than an afterthought.
 - A **fully local, containerised stack** (three Ollama instances, ChromaDB, SQLite, FastAPI, React) that any judge can reproduce with two commands — `make judge-setup` and `make docker-up` — and no external credentials or dataset downloads.
 
-The system reflects a deliberate trade-off: smaller local models over larger cloud models, deterministic retrieval over unconstrained LLM generation, and reproducibility over marginal performance gains. Given the evaluation criteria — solution paper, code reproducibility, and behavioural fidelity alongside raw metrics — we believe this balance is the right one.
+The system reflects a deliberate trade-off: smaller local models over larger cloud models, deterministic retrieval over unconstrained LLM generation, and reproducibility over marginal performance gains. Given the evaluation criteria — solution paper, code reproducibility, and behavioural fidelity — we believe this balance is the right one.
 
 ---
 
