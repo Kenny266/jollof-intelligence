@@ -579,12 +579,14 @@ docker exec -w /app backend-api python -m eval.suite \
   --task a \
   --preds data/eval/task_a_preds.json \
   --refs  data/eval/task_a_refs.json \
-  --fidelity
+  --fidelity \
+  --output-dir data/eval/reports
 docker exec -w /app backend-api python -m eval.suite \
   --task b \
   --preds data/eval/task_b_preds.json \
   --refs  data/eval/task_b_refs.json \
-  --k 10
+  --k 10 \
+  --output-dir data/eval/reports
 ```
 
 **DeepEval RAG metrics** (requires ollama-judge):
@@ -594,7 +596,7 @@ docker exec -w /app backend-api python -m eval.suite \
   --task a --preds data/eval/task_a_preds.json --refs data/eval/task_a_refs.json --deepeval
 ```
 
-Reports are written to `backend/eval/reports/` on the host (bind-mounted from the container) in JSON and Markdown formats.
+Reports are written to `backend/data/eval/reports/` on the host (under the `data` volume) in JSON and Markdown formats.
 
 ---
 

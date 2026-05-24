@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create data directories (volumes will overlay these at runtime)
-RUN mkdir -p data/raw data/processed data/chroma_db eval/reports
+RUN mkdir -p data/raw data/processed data/chroma_db data/eval/reports
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 

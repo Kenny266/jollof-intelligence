@@ -94,7 +94,7 @@ def main():
     parser.add_argument("--k", type=int, default=10, help="Cutoff for Task B ranking metrics")
     parser.add_argument("--deepeval", action="store_true", help="Run DeepEval RAG metrics")
     parser.add_argument("--fidelity", action="store_true", help="Run behavioural fidelity metrics (Task A)")
-    parser.add_argument("--output-dir", default="eval/reports", help="Directory for report output")
+    parser.add_argument("--output-dir", default="data/eval/reports", help="Directory for report output")
     args = parser.parse_args()
 
     preds = load_json(args.preds)

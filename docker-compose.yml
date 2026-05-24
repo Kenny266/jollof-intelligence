@@ -70,7 +70,6 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/data:/app/data
-      - ./backend/eval:/app/eval
     env_file:
       - ./.env
     depends_on:

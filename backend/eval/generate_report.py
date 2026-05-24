@@ -9,7 +9,7 @@ from pathlib import Path
 def generate_report(
     task: str,
     metrics: dict,
-    output_dir: str = "eval/reports",
+    output_dir: str = "data/eval/reports",
 ) -> tuple[Path, Path]:
     """
     Write evaluation results as both JSON and Markdown.

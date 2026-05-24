@@ -241,15 +241,17 @@ eval-a: eval-install
 	@echo "Running evaluation suite (Task A)..."
 	docker exec -w /app backend-api python -m eval.suite --task a \
 	  --preds data/eval/task_a_preds.json \
-	  --refs data/eval/task_a_refs.json --fidelity
-	@echo "✓ Task A report → backend/eval/reports/"
+	  --refs data/eval/task_a_refs.json --fidelity \
+	  --output-dir data/eval/reports
+	@echo "✓ Task A report → backend/data/eval/reports/"
 
-eval-b:
+eval-b: eval-install
 	@echo "Running evaluation suite (Task B)..."
 	docker exec -w /app backend-api python -m eval.suite --task b \
 	  --preds data/eval/task_b_preds.json \
-	  --refs data/eval/task_b_refs.json --k 10
-	@echo "✓ Task B report → backend/eval/reports/"
+	  --refs data/eval/task_b_refs.json --k 10 \
+	  --output-dir data/eval/reports
+	@echo "✓ Task B report → backend/data/eval/reports/"
 
 eval-all: eval-install eval-generate eval-a eval-b
-	@echo "✓ Evaluation complete – reports in backend/eval/reports/"
+	@echo "✓ Evaluation complete – reports in backend/data/eval/reports/"
