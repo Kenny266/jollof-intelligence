@@ -127,7 +127,7 @@ pipeline:
 	@echo "✓ Full pipeline complete"
 	@echo ""
 	@echo ""
-	@echo "✓ Services running – API at http://localhost:8000/docs"
+	@echo "✓ API: http://localhost:8000/docs | UI: http://localhost:5173"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -248,7 +248,6 @@ eval-all:
 	@echo ".............."
 	@echo "Generating evaluation datasets..."
 	cd backend && python scripts/generate_eval_preds.py
-	make eval-generate
 	@echo "✓ Evaluation datasets written to backend/data/eval/"
 	@echo "Running evaluation suite..."
 	@echo "Running evaluation suite (Task A)..."

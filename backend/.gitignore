@@ -24,6 +24,7 @@ env/
 data/raw/
 data/processed/
 data/chroma_db/
+data/jollof.db
 
 # Model weights (ignore contents but track .gitkeep placeholders for Docker bind mounts)
 ollama_models/**

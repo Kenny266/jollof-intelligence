@@ -79,7 +79,7 @@ flowchart TD
 
 Separating generation and embedding into distinct containers eliminates concurrency bottlenecks and prevents self-evaluation bias in the judge. Embedding is served over Ollama's HTTP API, keeping the application Docker image free of PyTorch or sentence-transformers (~500 MB saved).
 
-**ChromaDB (persistent HNSW)** — three named collections, each purpose-built:
+**ChromaDB (persistent HNSW)** — three named collections, each purpose-built (see §7 for store selection rationale):
 
 | Collection | Contents | Used by |
 |---|---|---|
@@ -87,7 +87,7 @@ Separating generation and embedding into distinct containers eliminates concurre
 | `items` | One doc per unique catalogue item (ASIN as ID) | Task B retrieval |
 | `user_reviews` | Same review paragraphs as `reviews` | Task B user vector construction |
 
-**SQLite (`jollof.db`)** — relational store for users, item catalogue, review history (tagged by `source`: `dataset`, `generated`, or `api`), and a full recommendation audit log (`RecommendationLog` + `RecommendationItem`). The `source` column enables precise separation of seed data from Task A write-backs. Swappable to PostgreSQL via the `DATABASE_URL` environment variable.
+**SQLite (`jollof.db`)** — relational store for users, item catalogue, review history (tagged by `source`: `dataset`, `generated`, or `api`), and a full recommendation audit log (`RecommendationLog` + `RecommendationItem`). The `source` column enables precise separation of seed data from Task A write-backs. Persisted as a single file under `data/jollof.db` (see §7). Swappable to PostgreSQL via the `DATABASE_URL` environment variable.
 
 **React demo UI (port 5173)** — two pages: Review (Task A form + generated output) and Recommend (Task B form + recommendation cards with cold-start badge). Served by nginx in production via Docker.
 
@@ -253,13 +253,15 @@ A live run over 100 sampled users would produce realistic NDCG@10 and Hit Rate@1
 
 **Three separate Ollama instances.** Running generation, embedding, and judge as independent containers avoids two failure modes observed during development. First, a single Ollama instance handling concurrent generate and embed requests experienced queue contention and timeout errors. Second, using the same model for both generation and LLM-as-judge evaluation introduces self-evaluation bias — a model is systematically more lenient toward outputs that match its own generation style. `deepseek-r1:1.5b` is a reasoning-focused model that evaluates rather than generates fluently, making it a more appropriate judge.
 
+**ChromaDB as the vector store.** We chose ChromaDB over managed or server-backed alternatives (Pinecone, Weaviate, pgvector on PostgreSQL) for the same reproducibility goals as the rest of the stack. Chroma persists to a plain directory on disk (`data/chroma_db/`), requires no separate database server or credentials, supports metadata filtering (e.g. `user_id` for Task A RAG), and ships cleanly in Docker. For judges, the entire vector index is bundled in `demo_data.tar.gz` and extracted beside the repo — inspect, reset, or re-seed without provisioning infrastructure. Alternatives like pgvector tie vectors to a running Postgres instance (connection strings, migrations, volume wiring); FAISS is fast but lacks the metadata-filtering and persistence ergonomics Chroma provides out of the box for this RAG + recommendation pattern.
+
 **Dual ChromaDB collections for Task B.** The earlier single-collection design stored review paragraphs in one Chroma collection and retrieved from it for both RAG and recommendation. This mixed two distinct semantic signals: user sentiment and item content. Separating `items` (catalogue descriptions, one doc per ASIN) from `user_reviews` (review paragraphs, many docs per user) enables a cleaner similarity space for each query pattern. The cost is approximately double the indexing time and storage, which is acceptable given the pipeline is run once offline.
 
 **Mean-pooling for user preference vectors.** Aggregating a user's review embeddings into a single preference vector by arithmetic mean is simple, fast, and produces reasonable results. The principal limitation is that it treats all historical reviews equally: a review written three years ago in a different category has the same weight as a review written last week. Recency-decayed or attention-weighted pooling would better capture current preference; this is a natural next step.
 
 **Grounding after LLM reranking.** An earlier design allowed the LLM reranker to output free-form item metadata. In testing, the model occasionally generated `item_id` values that did not appear in the candidate set, or produced incorrect titles and prices for real ASINs. The current design delegates only two responsibilities to the LLM: choosing the ordering and writing the `reason` text. Every structured field is overwritten by the retrieval layer. This eliminates hallucination at the cost of some reranking latency (an extra JSON parse and filter step), which is negligible compared to LLM generation time.
 
-**SQLite as the default relational store.** SQLite requires no installation, no credentials, and is accessible to any judge running `docker-up`. The `DATABASE_URL` environment variable accepts a PostgreSQL connection string without any code changes, making the production upgrade path trivial.
+**SQLite as the default relational store.** SQLite requires no installation, no credentials, and is accessible to any judge running `docker-up`. Everything lives in a single file under the project tree (`data/jollof.db`), included in the demo data bundle and trivial to back up or wipe (`make docker-clean-data`). That file-local layout is simpler to access and configure than server-backed stores such as pgvector, which require Postgres running alongside the app and separate backup/restore for relational and vector data. The `DATABASE_URL` environment variable accepts a PostgreSQL connection string without any code changes, making the production upgrade path trivial.
 
 ---
 

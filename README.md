@@ -73,13 +73,15 @@ Embeddings are served by Ollama over HTTP (`POST /api/embeddings`). The API cont
 
 ## Repository layout
 
-| Path | Purpose |
-|---|---|
-| [`backend/`](backend/) | FastAPI API, agents, data pipeline, evaluation suite |
-| [`frontend/`](frontend/) | React + TypeScript demo UI (Review + Recommend pages) |
-| [`docker-compose.yml`](docker-compose.yml) | Ollama services, backend, and frontend containers |
-| [`Makefile`](Makefile) | Docker, pipeline, and eval shortcuts |
-| [`.env.example`](.env.example) | Environment template (backend + frontend) |
+
+| Path                                       | Purpose                                               |
+| ------------------------------------------ | ----------------------------------------------------- |
+| `[backend/](backend/)`                     | FastAPI API, agents, data pipeline, evaluation suite  |
+| `[frontend/](frontend/)`                   | React + TypeScript demo UI (Review + Recommend pages) |
+| `[docker-compose.yml](docker-compose.yml)` | Ollama services, backend, and frontend containers     |
+| `[Makefile](Makefile)`                     | Docker, pipeline, and eval shortcuts                  |
+| `[.env.example](.env.example)`             | Environment template (backend + frontend)             |
+
 
 ### Backend
 
@@ -148,33 +150,39 @@ bash scripts/package_submission_assets.sh fetch-demo-data
 
 # 2. Start stack (3× Ollama + API + frontend UI)
 make docker-up
+# Expected output when complete:
+# ✓ API: http://localhost:8000/docs | UI: http://localhost:5173
 # Without make:
-docker compose --profile cpu-local up --build -d
+#   API docs → http://localhost:8000/docs
+#   Demo UI   → http://localhost:5173
+# Then open:
+#   API docs → http://localhost:8000/docs
+#   Demo UI   → http://localhost:5173
 
-# 3. Open services
-# API docs → http://localhost:8000/docs
-# Demo UI   → http://localhost:5173
-
-# 4. Stop containers when done (data is preserved)
+# 3. Stop containers when done (data is preserved)
 make docker-stop
 # Without make:
 docker compose --profile cpu-local stop ollama-generation ollama-judge ollama-embed backend frontend
 
-# 5. Full wipe (removes containers and volumes — use to reset completely)
+# 4. Full wipe (removes containers and volumes — use to reset completely)
 make docker-clean
 # Without make:
 docker compose --profile cpu-local down -v
 ```
 
-> **For judges:** the GitHub Release attached to this submission includes pre-packaged Ollama model weights and seeded demo data (SQLite + all three ChromaDB collections). No `make pipeline` needed. See [Judge quick start](#judge-quick-start) for details and fallback instructions.
+> **For judges:** the GitHub Release attached to this submission includes pre-packaged Ollama model weights and seeded demo data (SQLite + all three ChromaDB collections). Demo data lands at `backend/data/jollof.db` and `backend/data/chroma_db/` — no external DB setup. No `make pipeline` needed. See [Judge quick start](#judge-quick-start) for details and fallback instructions.
+
+`make docker-up` prints the service URLs when the stack is up. The API container waits for all three Ollama services to be healthy first (~1–2 min on first run).
 
 **Model weights** are extracted by `make judge-setup` into `backend/ollama_models/{generation,judge,embed}/` — `docker-up` picks them up immediately with no HuggingFace or model pull:
 
-| Service | Model | Approx. size | Cached at |
-|---|---|---|---|
-| `ollama-generation` | `qwen3:1.7b` | ~1.1 GB | `backend/ollama_models/generation/` |
-| `ollama-judge` | `deepseek-r1:1.5b` | ~1 GB | `backend/ollama_models/judge/` |
-| `ollama-embed` | `nomic-embed-text` | ~274 MB | `backend/ollama_models/embed/` |
+
+| Service             | Model              | Approx. size | Cached at                           |
+| ------------------- | ------------------ | ------------ | ----------------------------------- |
+| `ollama-generation` | `qwen3:1.7b`       | ~1.1 GB      | `backend/ollama_models/generation/` |
+| `ollama-judge`      | `deepseek-r1:1.5b` | ~1 GB        | `backend/ollama_models/judge/`      |
+| `ollama-embed`      | `nomic-embed-text` | ~274 MB      | `backend/ollama_models/embed/`      |
+
 
 The API container waits until all three Ollama services are healthy before starting. Subsequent `docker-up` calls reuse cached weights and start in seconds.
 
@@ -196,13 +204,15 @@ make docker-clean    # docker compose --profile cpu-local down -v
 
 **Services and ports:**
 
-| Container | Host port | Purpose |
-|---|---|---|
-| `backend-api` | 8000 | FastAPI application |
-| `frontend-web` | 5173 | React demo UI (nginx) |
-| `ollama-generation` | 8001 | Agent inference — `qwen3:1.7b` |
-| `ollama-judge` | 8002 | Evaluation / LLM-as-judge — `deepseek-r1:1.5b` |
-| `ollama-embed` | 8003 | Text embeddings — `nomic-embed-text` |
+
+| Container           | Host port | Purpose                                        |
+| ------------------- | --------- | ---------------------------------------------- |
+| `backend-api`       | 8000      | FastAPI application                            |
+| `frontend-web`      | 5173      | React demo UI (nginx)                          |
+| `ollama-generation` | 8001      | Agent inference — `qwen3:1.7b`                 |
+| `ollama-judge`      | 8002      | Evaluation / LLM-as-judge — `deepseek-r1:1.5b` |
+| `ollama-embed`      | 8003      | Text embeddings — `nomic-embed-text`           |
+
 
 Rebuild only the backend after code changes:
 
@@ -331,11 +341,13 @@ python -m data.pipeline.index --collection user_reviews
 
 **ChromaDB collections:**
 
-| Collection | Populated by | Used by |
-|---|---|---|
-| `reviews` | `pipeline-index` | Task A RAG retrieval |
-| `items` | `pipeline-index-items` | Task B item similarity search |
+
+| Collection     | Populated by                  | Used by                         |
+| -------------- | ----------------------------- | ------------------------------- |
+| `reviews`      | `pipeline-index`              | Task A RAG retrieval            |
+| `items`        | `pipeline-index-items`        | Task B item similarity search   |
 | `user_reviews` | `pipeline-index-user-reviews` | Task B user vector construction |
+
 
 > **Note:** Embeddings use `nomic-embed-text` (768-d vectors). If you switch embedding models, reset affected collections with `--reset` and re-run the index steps — vector dimensions must match.
 >
@@ -493,15 +505,17 @@ Every Task B response includes a `request_id` for database verification.
 
 Read-only endpoints for judges to confirm users, catalogue items, generated reviews, and recommendation runs exist in the database.
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/v1/users/{user_id}` | User existence, review counts, cold-start flag |
-| `GET` | `/api/v1/users/{user_id}/reviews` | Paginated review history (`?source=dataset\|generated`) |
-| `GET` | `/api/v1/users/{user_id}/reviews/generated` | Task A write-backs only |
-| `GET` | `/api/v1/items/{parent_asin}` | Catalogue item lookup |
-| `POST` | `/api/v1/items/verify` | Batch ASIN verification |
-| `GET` | `/api/v1/users/{user_id}/recommendations` | List persisted Task B runs |
-| `GET` | `/api/v1/recommendations/{request_id}` | Full run + `catalogue_verified` per item |
+
+| Method | Path                                        | Description                                    |
+| ------ | ------------------------------------------- | ---------------------------------------------- |
+| `GET`  | `/api/v1/users/{user_id}`                   | User existence, review counts, cold-start flag |
+| `GET`  | `/api/v1/users/{user_id}/reviews`           | Paginated review history (`?source=dataset     |
+| `GET`  | `/api/v1/users/{user_id}/reviews/generated` | Task A write-backs only                        |
+| `GET`  | `/api/v1/items/{parent_asin}`               | Catalogue item lookup                          |
+| `POST` | `/api/v1/items/verify`                      | Batch ASIN verification                        |
+| `GET`  | `/api/v1/users/{user_id}/recommendations`   | List persisted Task B runs                     |
+| `GET`  | `/api/v1/recommendations/{request_id}`      | Full run + `catalogue_verified` per item       |
+
 
 **Judge verification flow:**
 
@@ -565,36 +579,40 @@ Reports are written to `backend/eval/reports/` in JSON and Markdown formats.
 
 ## Environment variables
 
-Copy [`.env.example`](.env.example) to `.env` at the **repo root**. Backend settings are loaded from that file whether you run via Docker or locally; `VITE_API_BASE_URL` is used by the frontend (Vite dev server and Docker build).
+Copy `[.env.example](.env.example)` to `.env` at the **repo root**. Backend settings are loaded from that file whether you run via Docker or locally; `VITE_API_BASE_URL` is used by the frontend (Vite dev server and Docker build).
 
-| Variable | Default | Description |
-|---|---|---|
-| `OLLAMA_BASE_URL` | `http://ollama-generation:11434` | Ollama URL for agent inference (Task A & B) |
-| `AGENT_MODEL` | `qwen3:1.7b` | Agent LLM — generator |
-| `OLLAMA_JUDGE_URL` | `http://ollama-judge:11434` | Ollama URL for evaluation / LLM-as-judge |
-| `JUDGE_MODEL` | `deepseek-r1:1.5b` | Judge LLM (DeepEval, behavioural fidelity) |
-| `OLLAMA_EMBED_URL` | `http://ollama-embed:11434` | Ollama URL for text embeddings |
-| `EMBEDDING_MODEL` | `nomic-embed-text` | Ollama embedding model (768-d vectors) |
-| `CHROMA_DB_PATH` | `data/chroma_db` | ChromaDB persistence directory |
-| `CHROMA_COLLECTION` | `reviews` | ChromaDB collection for Task A RAG |
-| `CHROMA_ITEMS_COLLECTION` | `items` | ChromaDB collection for Task B item search |
-| `CHROMA_USER_REVIEWS_COLLECTION` | `user_reviews` | ChromaDB collection for Task B user vectors |
-| `RETRIEVAL_TOP_K` | `10` | Default number of retrieved documents |
-| `LLM_TEMPERATURE` | `0.7` | Generation temperature |
-| `LLM_TOP_P` | `0.8` | Top-p nucleus sampling |
-| `LLM_MAX_TOKENS` | `512` | Default max new tokens |
-| `LOG_LEVEL` | `INFO` | Logging level |
-| `DATABASE_URL` | `sqlite:///data/jollof.db` | Relational DB; use `postgresql+asyncpg://...` for Postgres |
-| `VITE_API_BASE_URL` | `http://localhost:8000` | Frontend API base URL (local dev + Docker build) |
+
+| Variable                         | Default                          | Description                                                |
+| -------------------------------- | -------------------------------- | ---------------------------------------------------------- |
+| `OLLAMA_BASE_URL`                | `http://ollama-generation:11434` | Ollama URL for agent inference (Task A & B)                |
+| `AGENT_MODEL`                    | `qwen3:1.7b`                     | Agent LLM — generator                                      |
+| `OLLAMA_JUDGE_URL`               | `http://ollama-judge:11434`      | Ollama URL for evaluation / LLM-as-judge                   |
+| `JUDGE_MODEL`                    | `deepseek-r1:1.5b`               | Judge LLM (DeepEval, behavioural fidelity)                 |
+| `OLLAMA_EMBED_URL`               | `http://ollama-embed:11434`      | Ollama URL for text embeddings                             |
+| `EMBEDDING_MODEL`                | `nomic-embed-text`               | Ollama embedding model (768-d vectors)                     |
+| `CHROMA_DB_PATH`                 | `data/chroma_db`                 | ChromaDB persistence directory                             |
+| `CHROMA_COLLECTION`              | `reviews`                        | ChromaDB collection for Task A RAG                         |
+| `CHROMA_ITEMS_COLLECTION`        | `items`                          | ChromaDB collection for Task B item search                 |
+| `CHROMA_USER_REVIEWS_COLLECTION` | `user_reviews`                   | ChromaDB collection for Task B user vectors                |
+| `RETRIEVAL_TOP_K`                | `10`                             | Default number of retrieved documents                      |
+| `LLM_TEMPERATURE`                | `0.7`                            | Generation temperature                                     |
+| `LLM_TOP_P`                      | `0.8`                            | Top-p nucleus sampling                                     |
+| `LLM_MAX_TOKENS`                 | `512`                            | Default max new tokens                                     |
+| `LOG_LEVEL`                      | `INFO`                           | Logging level                                              |
+| `DATABASE_URL`                   | `sqlite:///data/jollof.db`       | Relational DB; use `postgresql+asyncpg://...` for Postgres |
+| `VITE_API_BASE_URL`              | `http://localhost:8000`          | Frontend API base URL (local dev + Docker build)           |
+
 
 ---
 
 ## Datasets
 
-| Dataset | Source | Usage |
-|---|---|---|
-| Amazon Reviews 2023 — Books Reviews | [HuggingFace](https://huggingface.co/datasets/cogsci13/Amazon-Reviews-2023-Books-Review) | User review history, ratings, timestamps |
-| Amazon Reviews 2023 — Books Metadata | [HuggingFace](https://huggingface.co/datasets/cogsci13/Amazon-Reviews-2023-Books-Meta) | Item titles, authors, categories, prices |
+
+| Dataset                              | Source                                                                                   | Usage                                    |
+| ------------------------------------ | ---------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Amazon Reviews 2023 — Books Reviews  | [HuggingFace](https://huggingface.co/datasets/cogsci13/Amazon-Reviews-2023-Books-Review) | User review history, ratings, timestamps |
+| Amazon Reviews 2023 — Books Metadata | [HuggingFace](https://huggingface.co/datasets/cogsci13/Amazon-Reviews-2023-Books-Meta)   | Item titles, authors, categories, prices |
+
 
 **Citation:**
 
@@ -611,22 +629,24 @@ Copy [`.env.example`](.env.example) to `.env` at the **repo root**. Backend sett
 
 ## Technology stack
 
-| Component | Technology | Reason |
-|---|---|---|
-| Agent LLM | Qwen3:1.7b via Ollama | Fast, naturalistic text; task-specific think/no-think modes |
-| Judge LLM | DeepSeek-R1:1.5b via Ollama | Reasoning model — better as evaluator than generator |
-| Embeddings | nomic-embed-text via Ollama | Served over HTTP — no PyTorch in the API image |
-| Vector DB | ChromaDB | Persistent, metadata-filterable, Docker-friendly |
-| Relational DB | SQLite (aiosqlite) | User history and review persistence; swap to Postgres via `DATABASE_URL` |
-| API Framework | FastAPI | Async, auto-docs, Pydantic validation |
-| Frontend | React + TypeScript + Vite | Demo UI for Task A and Task B |
-| Evaluation | ROUGE + BERTScore + BLEU + DeepEval | Covers all rubric metrics |
+
+| Component     | Technology                          | Reason                                                                                           |
+| ------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Agent LLM     | Qwen3:1.7b via Ollama               | Fast, naturalistic text; task-specific think/no-think modes                                      |
+| Judge LLM     | DeepSeek-R1:1.5b via Ollama         | Reasoning model — better as evaluator than generator                                             |
+| Embeddings    | nomic-embed-text via Ollama         | Served over HTTP — no PyTorch in the API image                                                   |
+| Vector DB     | ChromaDB                            | File-local index at `data/chroma_db/`; metadata-filterable; no separate server                   |
+| Relational DB | SQLite (aiosqlite)                  | Single file at `data/jollof.db`; audit + review persistence; swap to Postgres via `DATABASE_URL` |
+| API Framework | FastAPI                             | Async, auto-docs, Pydantic validation                                                            |
+| Frontend      | React + TypeScript + Vite           | Demo UI for Task A and Task B                                                                    |
+| Evaluation    | ROUGE + BERTScore + BLEU + DeepEval | Covers all rubric metrics                                                                        |
+
 
 ---
 
 ## Solution paper
 
-The solution paper is at [`SOLUTION_PAPER.md`](SOLUTION_PAPER.md) (repo root).
+The solution paper is at `[SOLUTION_PAPER.md](SOLUTION_PAPER.md)` (repo root).
 
 It covers problem framing, system architecture, Task A and Task B pipelines, evaluation methodology, ablation studies, and limitations.
 
@@ -658,12 +678,13 @@ bash scripts/package_submission_assets.sh fetch-demo-data
 
 # 4. Start the full stack (Ollama will be healthy in ~1–2 min — no model pull needed)
 make docker-up
+# Expected output when complete:
+# ✓ API: http://localhost:8000/docs | UI: http://localhost:5173
 # Without make:
 docker compose --profile cpu-local up --build -d
-
-# 5. Open services
-# API docs → http://localhost:8000/docs
-# Demo UI  → http://localhost:5173
+# Then open:
+#   API docs → http://localhost:8000/docs
+#   Demo UI  → http://localhost:5173
 ```
 
 No `make pipeline` needed — SQLite and all three ChromaDB collections (`reviews`, `items`, `user_reviews`) are pre-seeded in the bundle.
@@ -722,3 +743,4 @@ cp .env.example .env
 make judge-setup && make docker-up
 # Confirm /health, Task A, Task B, and verification API all respond correctly
 ```
+
