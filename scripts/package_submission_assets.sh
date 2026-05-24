@@ -134,7 +134,7 @@ fetch_models() {
 
   log "Downloading models from $MODELS_BUNDLE_URL ..."
   mkdir -p "$REPO_ROOT/backend"
-  curl -L --progress-bar -o "$REPO_ROOT/backend/ollama_models.tar.gz" "$MODELS_BUNDLE_URL"
+  curl -L --ssl-no-revoke --progress-bar -o "$REPO_ROOT/backend/ollama_models.tar.gz" "$MODELS_BUNDLE_URL"
 
   log "Extracting to $REPO_ROOT/backend/ ..."
   tar -xzf "$REPO_ROOT/backend/ollama_models.tar.gz" -C "$REPO_ROOT/backend/"
@@ -158,7 +158,7 @@ fetch_demo_data() {
 
   log "Downloading demo data from $DEMO_DATA_BUNDLE_URL ..."
   mkdir -p "$DATA_DIR"
-  curl -L --progress-bar -o "$DATA_DIR/demo_data.tar.gz" "$DEMO_DATA_BUNDLE_URL"
+  curl -L --ssl-no-revoke --progress-bar -o "$DATA_DIR/demo_data.tar.gz" "$DEMO_DATA_BUNDLE_URL"
 
   log "Extracting to $REPO_ROOT/backend/ ..."
   tar -xzf "$DATA_DIR/demo_data.tar.gz" -C "$REPO_ROOT/backend/"
