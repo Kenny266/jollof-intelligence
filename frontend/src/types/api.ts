@@ -55,6 +55,7 @@ export interface Recommendation {
 
 export interface RecommendResponse {
   user_id: string;
+  request_id: string;
   recommendations: Recommendation[];
   follow_up?: string;
   cold_start: boolean;

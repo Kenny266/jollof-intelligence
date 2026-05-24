@@ -4,19 +4,11 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  envDir: path.resolve(__dirname, ".."),
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-    },
-  },
-})
+});

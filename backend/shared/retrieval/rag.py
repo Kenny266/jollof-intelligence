@@ -12,6 +12,16 @@ from shared.retrieval.vectorstore import search
 logger = logging.getLogger(__name__)
 
 
+def _item_display_name(item: dict[str, Any]) -> str:
+    """Resolve item title from Chroma metadata or LLM output fields."""
+    return (
+        item.get("item_title")
+        or item.get("title")
+        or item.get("name")
+        or "Unknown"
+    )
+
+
 def build_user_context(
     persona: dict[str, Any],
     query: str,
@@ -59,7 +69,7 @@ def build_user_context(
     if retrieved:
         lines.append("RETRIEVED SIMILAR ITEMS FROM THE CATALOGUE:")
         for i, item in enumerate(retrieved, 1):
-            name = item.get("title") or item.get("name") or "Unknown"
+            name = _item_display_name(item)
             category = item.get("categories") or item.get("category") or "?"
             score = item.get("similarity_score", 0.0)
             lines.append(f"  {i}. {name} [{category}] — relevance {score:.2f}")
@@ -94,7 +104,7 @@ def build_recommendation_context(
         "CANDIDATE ITEMS:",
     ]
     for i, item in enumerate(candidates, 1):
-        name = item.get("title") or item.get("name") or "Unknown"
+        name = _item_display_name(item)
         category = item.get("categories") or item.get("category") or "?"
         rating = item.get("average_rating") or item.get("rating") or "N/A"
         price = item.get("price", "N/A")

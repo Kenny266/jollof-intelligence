@@ -8,7 +8,7 @@ Tables:
 """
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -62,3 +62,39 @@ class Item(Base):
     price: Mapped[str | None] = mapped_column(String, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     average_rating: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class RecommendationLog(Base):
+    __tablename__ = "recommendation_logs"
+
+    request_id: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    context: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    cold_start: Mapped[bool] = mapped_column(Boolean, default=False)
+    follow_up: Mapped[str | None] = mapped_column(Text, nullable=True)
+    top_k: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+    )
+
+
+class RecommendationItem(Base):
+    __tablename__ = "recommendation_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    request_id: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("recommendation_logs.request_id"),
+        nullable=False,
+        index=True,
+    )
+    parent_asin: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    author: Mapped[str | None] = mapped_column(String, nullable=True)
+    categories: Mapped[str | None] = mapped_column(String, nullable=True)
+    price: Mapped[str | None] = mapped_column(String, nullable=True)
+    score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    rank: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

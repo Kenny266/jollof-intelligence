@@ -10,7 +10,6 @@ client-closed error caused by re-opening an exhausted streaming connection.
 
 Usage:
     python -m data.pipeline.download
-    python -m data.pipeline.download --max-users 5000 --min-reviews 5
 """
 import argparse
 import json
@@ -32,13 +31,14 @@ REVIEWS_DATASET = "cogsci13/Amazon-Reviews-2023-Books-Review"
 META_DATASET = "cogsci13/Amazon-Reviews-2023-Books-Meta"
 
 rows_limit = 50000
-max_users = 10000
-min_reviews = 5
+max_users = int(rows_limit)
+min_reviews = 1
 
+# download reviews from HuggingFace
 def download_reviews(max_users: int = max_users, min_reviews: int = min_reviews) -> set[str]:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    # --- HTTP pass (single connection, 15% slice) → temp file ---
+    # --- HTTP pass (single connection, slice) → temp file ---
     logger.info(f"Streaming {rows_limit} rows of reviews from HuggingFace to temp file…")
     ds = load_dataset(
         REVIEWS_DATASET,
@@ -109,6 +109,7 @@ def download_reviews(max_users: int = max_users, min_reviews: int = min_reviews)
     return reviewed_asins
 
 
+# download metadata from HuggingFace
 def download_metadata(required_asins: set[str] | None = None) -> None:
     """Stream metadata, keeping only records whose parent_asin appears in reviews."""
     label = f"{rows_limit} rows" if required_asins is None else f"{len(required_asins)} target ASINs"

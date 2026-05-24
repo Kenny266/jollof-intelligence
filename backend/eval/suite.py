@@ -64,8 +64,12 @@ def run_task_a(preds: list[dict], refs: list[dict], deepeval: bool, fidelity: bo
 
 def run_task_b(preds: list[dict], refs: list[dict], k: int, deepeval: bool) -> dict:
     from eval.task_b_metrics import evaluate_task_b
+    from eval.task_b_subsets import evaluate_task_b_subsets
     logger.info("Running Task B standard metrics (k=%d)…", k)
     metrics = evaluate_task_b(preds, refs, k=k)
+
+    subset_metrics = evaluate_task_b_subsets(preds, refs, k=k)
+    metrics.update(subset_metrics)
 
     if deepeval:
         logger.info("Running DeepEval RAG metrics for Task B…")

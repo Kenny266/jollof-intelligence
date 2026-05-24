@@ -16,6 +16,7 @@ from shared.db.engine import init_db
 from src.config import get_settings
 from src.router.user_modelling_router import router as task_a_router
 from src.router.recommender_router import router as task_b_router
+from src.router.verification_router import router as verification_router
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -64,6 +65,7 @@ app.add_middleware(
 
 app.include_router(task_a_router, prefix="/api/v1")
 app.include_router(task_b_router, prefix="/api/v1")
+app.include_router(verification_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["Health"])

@@ -1,0 +1,29 @@
+[
+  {
+    "user_id": "USER_WARM_001",
+    "context": "African historical fiction",
+    "cold_start": false,
+    "recommendations": [
+      {"item_id": "B000001", "title": "Things Fall Apart", "reason": "Classic Nigerian literature match."},
+      {"item_id": "B000003", "title": "Other Book", "reason": "Related genre pick."}
+    ]
+  },
+  {
+    "user_id": "USER_WARM_002",
+    "context": "Space opera with political intrigue",
+    "cold_start": false,
+    "recommendations": [
+      {"item_id": "B000010", "title": "Dune", "reason": "Political sci-fi epic."},
+      {"item_id": "B000011", "title": "Foundation", "reason": "Galactic politics theme."}
+    ]
+  },
+  {
+    "user_id": "USER_COLD_001",
+    "context": "22-year-old Nigerian student who loves contemporary African fiction",
+    "cold_start": true,
+    "recommendations": [
+      {"item_id": "B000020", "title": "Purple Hibiscus", "reason": "Contemporary Nigerian fiction."},
+      {"item_id": "B000099", "title": "Unrelated", "reason": "Popularity fallback."}
+    ]
+  }
+]

@@ -37,6 +37,7 @@ class RecommendedItem(BaseModel):
 
 class RecommendResponse(BaseModel):
     user_id: str
+    request_id: str = Field(..., description="UUID for verifying this run via GET /recommendations/{request_id}")
     recommendations: list[RecommendedItem]
     follow_up: Optional[str] = Field(default=None, description="Follow-up question for multi-turn refinement")
     cold_start: bool = Field(default=False)

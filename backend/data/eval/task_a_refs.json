@@ -1,0 +1,20 @@
+[
+  {
+    "user_id": "USER_WARM_001",
+    "product_title": "Things Fall Apart",
+    "rating": 5,
+    "review": "Abeg, this book na classic. Chinua Achebe capture Igbo life so well — I no fit lie, e sweet me."
+  },
+  {
+    "user_id": "USER_WARM_002",
+    "product_title": "Dune",
+    "rating": 4,
+    "review": "Solid sci-fi with deep world-building. A bit long but worth the ginger to finish."
+  },
+  {
+    "user_id": "USER_COLD_001",
+    "product_title": "Purple Hibiscus",
+    "rating": 4,
+    "review": "Adichie write with clarity and heart. Family drama set in Nigeria — very relatable."
+  }
+]
